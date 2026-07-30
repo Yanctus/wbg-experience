@@ -12,7 +12,23 @@
  */
 
 .scene {
-  --scene-length: 350vh;
+  /*
+   * Three consecutive stretches of scroll on one pinned stage and one
+   * timeline — scene 01, the dive into the sheet, then scene 02 on top of the
+   * enlarged blueprint. The hook reads these three values to work out where
+   * each stretch begins, so they stay the single source of truth.
+   *
+   * These are scroll *distances*, not section heights: while the stage is
+   * pinned, one viewport height of the section is consumed holding it in place.
+   * The section therefore has to be the sum plus --pin-offset, and the ratios
+   * the hook derives then map to the real scroll distances. 250vh + the 100vh
+   * pin is the 350vh scene 01 was specified and approved at.
+   */
+  --scene-01-length: 250vh;
+  --transition-length: 190vh;
+  --scene-02-length: 90vh;
+  --pin-offset: 100vh;
+
   /* Capped so the sheet does not grow without limit on very wide displays. */
   --paper-width: min(58vw, 64rem);
   --paper-inset: 1vw;
@@ -24,7 +40,10 @@
 
   position: relative;
   width: 100%;
-  height: var(--scene-length);
+  height: calc(
+    var(--scene-01-length) + var(--transition-length) + var(--scene-02-length) +
+      var(--pin-offset)
+  );
 }
 
 /*
@@ -130,10 +149,16 @@
 
 /* 3 + 4 — sheet and blueprint ------------------------------------------ */
 
+/*
+ * The sheet sits ABOVE the typography (z 5 > z 4) for the whole scene. During
+ * scene 01 the two never overlap, so this is invisible there — but it is what
+ * lets the enlarging sheet sweep over and cover the text during the dive,
+ * with no z-index animation and therefore no risk of a mid-scrub swap.
+ */
 .paperPerspective {
   position: absolute;
   inset: 0;
-  z-index: 3;
+  z-index: 5;
   perspective: 1800px;
   perspective-origin: 55% 45%;
   pointer-events: none;
@@ -142,6 +167,24 @@
 .paperAnchor {
   rotate: var(--paper-rotate);
   transform-style: preserve-3d;
+}
+
+/*
+ * Camera for the dive. It wraps the whole sheet inside the anchor, so its
+ * transform composes on top of the static pose while scene 01's own 2.5D
+ * transforms stay on .paperStage — two independent writers, no conflict.
+ *
+ * transform-origin is the blueprint's centre (derived from .blueprint's insets:
+ * x = (16 + 83)/2, y = (15 + 81)/2). Scaling and rotating about that point
+ * keeps the plan's centre pinned, so the dive only has to translate that one
+ * point to the middle of the viewport.
+ */
+.paperCamera {
+  position: absolute;
+  inset: 0;
+  transform-origin: 49.5% 48%;
+  transform-style: preserve-3d;
+  will-change: transform;
 }
 
 .paperStage {
@@ -302,7 +345,7 @@
 /* 6 — light ------------------------------------------------------------ */
 
 .light {
-  z-index: 5;
+  z-index: 7;
   opacity: 0.46;
   mix-blend-mode: multiply;
   will-change: transform;
@@ -323,7 +366,7 @@
 /* 7 — grain ------------------------------------------------------------ */
 
 .grain {
-  z-index: 6;
+  z-index: 8;
   opacity: 0.24;
   mix-blend-mode: multiply;
 }
@@ -337,7 +380,7 @@
 /* 8 — dust ------------------------------------------------------------- */
 
 .dust {
-  z-index: 7;
+  z-index: 9;
   opacity: 0.38;
   mix-blend-mode: multiply;
 }
@@ -423,7 +466,9 @@
 /* Mobile: text on top, sheet below — a single column, no overlap. */
 @media (max-width: 720px) {
   .scene {
-    --scene-length: 420vh;
+    --scene-01-length: 320vh;
+    --transition-length: 200vh;
+    --scene-02-length: 90vh;
     --paper-width: 100vw;
     --paper-inset: 0vw;
     --paper-rotate: -1deg;
@@ -480,7 +525,12 @@
 
 @media (prefers-reduced-motion: reduce) {
   .scene {
-    --scene-length: 100vh;
+    /* No dive and no scene 02 hold — scene 01 is shown complete, at rest.
+       Nothing is pinned either, so no pin offset is reserved. */
+    --scene-01-length: 100vh;
+    --transition-length: 0vh;
+    --scene-02-length: 0vh;
+    --pin-offset: 0vh;
   }
 
   .viewport {

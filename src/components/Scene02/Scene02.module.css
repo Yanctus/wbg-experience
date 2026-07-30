@@ -1,0 +1,61 @@
+/*
+ * Scene 02 — layers sit on the enlarged blueprint, above the sheet (z 5) and
+ * below the atmospheric overlays (light/grain/dust, z 7–9), so the building
+ * still picks up the scene's light and grain.
+ *
+ * The layers are centred on the viewport rather than on the sheet: by the time
+ * scene 02 starts, the sheet fills the screen, so the viewport centre and the
+ * blueprint centre are the same point.
+ */
+
+.scene {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  pointer-events: none;
+}
+
+.layer {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/*
+ * The building is drawn at its natural scale, capped so it keeps a margin to
+ * the viewport edges on any display. `contain` means a taller asset than
+ * expected still fits rather than cropping.
+ */
+.layer img {
+  width: min(74vw, 60rem);
+  max-height: 76vh;
+  height: auto;
+  object-fit: contain;
+}
+
+/*
+ * multiply on the layer, not on the image: these sit over the blueprint, and
+ * the upcoming PNGs are expected to have the same near-white field as the
+ * scene 01 assets. If they ship with a real alpha channel, drop the blend and
+ * the filter here.
+ */
+.scene [data-scene-02-shadow],
+.scene [data-scene-02-wireframe],
+.scene [data-scene-02-lines] {
+  mix-blend-mode: multiply;
+}
+
+.scene [data-scene-02-shadow] img,
+.scene [data-scene-02-wireframe] img,
+.scene [data-scene-02-lines] img {
+  filter: brightness(1.035);
+}
+
+@media (max-width: 720px) {
+  .layer img {
+    width: 88vw;
+    max-height: 58vh;
+  }
+}

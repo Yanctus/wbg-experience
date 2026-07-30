@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { Scene02 } from '../Scene02/Scene02'
 import { useScene01Animation } from '../../hooks/useScene01Animation'
 import styles from './Scene01.module.css'
 
@@ -72,7 +73,7 @@ export function Scene01() {
         <div className={styles.viewport} data-scene-viewport>
           <div className={styles.stage}>
             {/* 1 — paper background, fills the viewport */}
-            <div className={styles.background} aria-hidden="true">
+            <div className={styles.background} data-scene-background aria-hidden="true">
               <img
                 src={ASSETS.background}
                 alt=""
@@ -103,35 +104,38 @@ export function Scene01() {
                 .paperStage's transform — sharing one element would make GSAP
                 absorb the centring offset and then animate it away.
               */}
-              <div className={styles.paperAnchor}>
-                <div className={styles.paperStage} data-scene-paper-stage>
-                  <div className={styles.paperParallax} data-scene-paper-parallax>
-                    <div className={styles.paper}>
-                      <img
-                        src={ASSETS.paper}
-                        alt=""
-                        width={NATURAL_WIDTH}
-                        height={NATURAL_HEIGHT}
-                        decoding="async"
-                        fetchPriority="high"
-                      />
-                    </div>
+              <div className={styles.paperAnchor} data-scene-paper-anchor>
+                {/* The dive's camera — see useScene01Animation. */}
+                <div className={styles.paperCamera} data-scene-camera>
+                  <div className={styles.paperStage} data-scene-paper-stage>
+                    <div className={styles.paperParallax} data-scene-paper-parallax>
+                      <div className={styles.paper}>
+                        <img
+                          src={ASSETS.paper}
+                          alt=""
+                          width={NATURAL_WIDTH}
+                          height={NATURAL_HEIGHT}
+                          decoding="async"
+                          fetchPriority="high"
+                        />
+                      </div>
 
-                    {/*
-                      One element carries the reveal, the opacity and the
-                      multiply blend. Nesting those in separate wrappers would
-                      create an extra stacking context and isolate the blend
-                      from the sheet, which makes the plan show up as a bright
-                      rectangle.
-                    */}
-                    <div className={styles.blueprint} data-scene-blueprint>
-                      <img
-                        src={ASSETS.blueprint}
-                        alt=""
-                        width={NATURAL_WIDTH}
-                        height={NATURAL_HEIGHT}
-                        decoding="async"
-                      />
+                      {/*
+                        One element carries the reveal, the opacity and the
+                        multiply blend. Nesting those in separate wrappers would
+                        create an extra stacking context and isolate the blend
+                        from the sheet, which makes the plan show up as a bright
+                        rectangle.
+                      */}
+                      <div className={styles.blueprint} data-scene-blueprint>
+                        <img
+                          src={ASSETS.blueprint}
+                          alt=""
+                          width={NATURAL_WIDTH}
+                          height={NATURAL_HEIGHT}
+                          decoding="async"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -155,7 +159,10 @@ export function Scene01() {
               </p>
             </div>
 
-            {/* 6 — warm light from the top left */}
+            {/* 6 — scene 02 grows on the enlarged blueprint */}
+            <Scene02 />
+
+            {/* 7 — warm light from the top left */}
             <div className={styles.light} data-scene-light aria-hidden="true">
               <img
                 src={ASSETS.light}
@@ -166,7 +173,7 @@ export function Scene01() {
               />
             </div>
 
-            {/* 7 — paper grain */}
+            {/* 8 — paper grain */}
             <div className={styles.grain} aria-hidden="true">
               <img
                 src={ASSETS.grain}
@@ -177,7 +184,7 @@ export function Scene01() {
               />
             </div>
 
-            {/* 8 — dust */}
+            {/* 9 — dust */}
             <div className={styles.dust} data-scene-dust aria-hidden="true">
               <img
                 src={ASSETS.dust}
