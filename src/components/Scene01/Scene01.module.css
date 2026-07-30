@@ -25,8 +25,8 @@
    * pin is the 350vh scene 01 was specified and approved at.
    */
   --scene-01-length: 250vh;
-  --transition-length: 190vh;
-  --scene-02-length: 620vh;
+  --transition-length: 160vh;
+  --scene-02-length: 420vh;
   --pin-offset: 100vh;
 
   /* Capped so the sheet does not grow without limit on very wide displays. */
@@ -414,6 +414,94 @@
   transform: translateY(-50%);
 }
 
+/*
+ * The opening line.
+ *
+ * Absolutely placed over the headline's position so the two occupy the same
+ * spot: the sentence leaves and the headline arrives in place, with no reflow
+ * and no jump between them. Set a shade lighter and a size below the headline —
+ * it is a quiet, literary opening, not a second headline competing with it.
+ */
+.intro {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  margin: 0;
+  transform: translateY(-50%);
+  /*
+   * An absolutely positioned child resolves against the padding box, so the
+   * column's own padding does not inset it. Inheriting that padding keeps the
+   * opening line on the same measure as the headline it hands over to.
+   */
+  padding: inherit;
+  font-size: clamp(1.05rem, 1.3vw, 1.35rem);
+  font-weight: 400;
+  line-height: 1.62;
+  letter-spacing: 0.004em;
+  color: #4c443a;
+  max-width: 24ch;
+  text-wrap: balance;
+}
+
+.introInner {
+  display: block;
+}
+
+/* --------------------------------------------------------- scroll hint */
+
+.scrollHint {
+  position: absolute;
+  z-index: 10;
+  left: 0;
+  right: 0;
+  bottom: clamp(1.75rem, 4vh, 3rem);
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.scrollHintInner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.95rem;
+}
+
+.scrollHintLabel {
+  font-size: 0.64rem;
+  font-weight: 500;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: #7c7366;
+}
+
+/* The hairline the dot travels. Faded at both ends so it has no hard tips. */
+.scrollHintLine {
+  position: relative;
+  display: block;
+  width: 1px;
+  height: 3.75rem;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    #c3b9a9 22%,
+    #c3b9a9 78%,
+    transparent
+  );
+}
+
+.scrollHintDot {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 3px;
+  height: 3px;
+  margin-left: -1px;
+  border-radius: 50%;
+  background-color: #6d655a;
+}
+
 .eyebrow {
   margin: 0 0 clamp(1.5rem, 3vw, 2.75rem);
   font-size: clamp(0.66rem, 0.78vw, 0.8rem);
@@ -581,9 +669,9 @@
 /* Mobile: text on top, sheet below — a single column, no overlap. */
 @media (max-width: 720px) {
   .scene {
-    --scene-01-length: 320vh;
-    --transition-length: 200vh;
-    --scene-02-length: 620vh;
+    --scene-01-length: 300vh;
+    --transition-length: 170vh;
+    --scene-02-length: 430vh;
     --paper-width: 100vw;
     --paper-inset: 0vw;
     --paper-rotate: -1deg;
@@ -601,6 +689,31 @@
     right: auto;
     left: 50%;
     translate: -50% 0;
+  }
+
+  .scrollHint {
+    /* The sheet occupies the lower half on phones, so the hint sits just
+       under the text block instead of at the foot of the screen. */
+    bottom: auto;
+    top: clamp(17rem, 47vh, 28rem);
+  }
+
+  .scrollHintLine {
+    height: 2.75rem;
+  }
+
+  /*
+   * On a short phone the sheet sits higher, so the hint has to come up with it
+   * and give back some of the hairline to stay clear of the paper.
+   */
+  @media (max-height: 720px) {
+    .scrollHint {
+      top: clamp(11rem, 33vh, 17rem);
+    }
+
+    .scrollHintLine {
+      height: 2rem;
+    }
   }
 
   .content {
@@ -639,6 +752,13 @@
 /* ------------------------------------------------------- reduced motion */
 
 @media (prefers-reduced-motion: reduce) {
+  /* Nothing scrolls in this variant, and the opening line would sit on top of
+     the headline it hands over to. */
+  .scrollHint,
+  .intro {
+    display: none;
+  }
+
   .scene {
     /* No dive and no scene 02 hold — scene 01 is shown complete, at rest.
        Nothing is pinned either, so no pin offset is reserved. */

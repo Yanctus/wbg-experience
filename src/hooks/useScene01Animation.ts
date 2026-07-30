@@ -172,6 +172,12 @@ export function useScene01Animation(rootRef: RefObject<HTMLElement | null>, enab
       const light = pick('[data-scene-light]')
       const viewport = pick('[data-scene-viewport]')
       const paperAnchor = pick('[data-scene-paper-anchor]')
+      const intro = pick('[data-scene-intro]')
+      const introInner = pick('[data-scene-intro-inner]')
+      const hint = pick('[data-scene-hint]')
+      const hintInner = pick('[data-scene-hint-inner]')
+      const hintLine = pick('[data-scene-hint-line]')
+      const hintDot = pick('[data-scene-hint-dot]')
 
       const titleLines = title ? Array.from(title.children) : []
       const texts = [eyebrow, subline].filter(Boolean) as HTMLElement[]
@@ -182,6 +188,7 @@ export function useScene01Animation(rootRef: RefObject<HTMLElement | null>, enab
        * collapsed to a single viewport height in CSS.
        */
       if (reduced || !motion) {
+        gsap.set([intro, hint].filter(Boolean), { autoAlpha: 0 })
         gsap.set([...texts, title].filter(Boolean), { opacity: 1, y: 0 })
         gsap.set(titleLines, { opacity: 1, y: 0 })
         if (blueprint) gsap.set(blueprint, { clipPath: 'none', opacity: 1 })
@@ -201,6 +208,66 @@ export function useScene01Animation(rootRef: RefObject<HTMLElement | null>, enab
        * the anchor, never the animated element.
        */
       if (shadow) gsap.set(shadow, { opacity: 0.3, xPercent: 1.5, yPercent: 19, scale: 1.06 })
+
+      /*
+       * ------------------------------------------------------ the opening
+       *
+       * A short, time-based arrival before any scrolling: the sheet is already
+       * there, then the line settles onto it, then the invitation to scroll.
+       * Staggered so the reader's eye lands on the paper first and the words
+       * second — the drawing is the subject, the sentence introduces it.
+       *
+       * These animate the *inner* elements. The scroll timeline animates the
+       * outer ones, so the arrival and the departure can never contend for the
+       * same property on the same element.
+       */
+      if (introInner) gsap.set(introInner, { opacity: 0, y: 14 })
+      if (hintInner) gsap.set(hintInner, { opacity: 0, y: 8 })
+
+      const arrival = gsap.timeline({ defaults: { ease: 'power2.out' } })
+      if (introInner) {
+        arrival.to(introInner, { opacity: 1, y: 0, duration: 1.5 }, 0.35)
+      }
+      if (hintInner) {
+        arrival.to(hintInner, { opacity: 1, y: 0, duration: 1.1 }, 1.5)
+      }
+
+      /*
+       * The sheet breathes almost imperceptibly until the reader takes over.
+       * It rides on .paperParallax, which owns only x and y for the mouse, so
+       * nothing else is writing scale on that element.
+       */
+      const ambient: gsap.core.Timeline[] = []
+
+      if (paperParallax) {
+        ambient.push(
+          gsap.timeline({ repeat: -1, yoyo: true }).to(paperParallax, {
+            scale: 1.0038,
+            duration: 6.5,
+            ease: 'sine.inOut',
+          }),
+        )
+      }
+
+      /*
+       * The dot travels the hairline once, fades, and begins again after a
+       * pause — slow enough to read as an invitation rather than a signal.
+       */
+      if (hintDot && hintLine) {
+        const travel = hintLine.offsetHeight - hintDot.offsetHeight
+        ambient.push(
+          gsap
+            .timeline({ repeat: -1, repeatDelay: 1 })
+            .fromTo(
+              hintDot,
+              { y: 0, opacity: 0 },
+              { opacity: 1, duration: 0.6, ease: 'power1.out' },
+              0,
+            )
+            .to(hintDot, { y: travel, duration: 2.6, ease: 'power1.inOut' }, 0)
+            .to(hintDot, { opacity: 0, duration: 0.6, ease: 'power1.in' }, 2),
+        )
+      }
 
       /* Depth is dialled right back on phones: no rotateX at all there. */
       const depth = compact ? 0 : 1
@@ -320,7 +387,31 @@ export function useScene01Animation(rootRef: RefObject<HTMLElement | null>, enab
       const scene01 = gsap.timeline({ defaults: { ease: 'none' } })
       const reveal = { progress: 0 }
 
-      // 0 – 10 %: the scene stays calm and almost empty.
+      /*
+       * 0 – 10 %: the opening line leaves as the reader takes over, rising
+       * slightly as it goes so the handover has a direction. The headline
+       * arrives at 27 %, well clear of it — a cross-fade in the same spot, not
+       * a cut.
+       */
+      if (intro) {
+        scene01.to(intro, { opacity: 0, y: -16, duration: 0.1, ease: 'power2.in' }, 0)
+      }
+      /* The invitation retires the moment it has been accepted. */
+      if (hint) {
+        scene01.to(hint, { opacity: 0, y: 10, duration: 0.05, ease: 'power2.in' }, 0)
+      }
+
+      /*
+       * The first scroll is answered immediately: the sheet lifts a few pixels
+       * and its shadow deepens a touch, so the very first gesture has a
+       * physical consequence rather than waiting for a beat further down.
+       */
+      if (paperStage) {
+        scene01.to(paperStage, { yPercent: -0.4, scale: 1.004, duration: 0.09 }, 0)
+      }
+      if (shadow) {
+        scene01.to(shadow, { opacity: 0.4, yPercent: 20, scale: 1.09, duration: 0.09 }, 0)
+      }
 
       // 10 – 30 %: the blueprint is wiped in diagonally.
       scene01.to(
@@ -510,12 +601,28 @@ export function useScene01Animation(rootRef: RefObject<HTMLElement | null>, enab
           trigger: root,
           start: 'top top',
           end: 'bottom bottom',
-          scrub: 1,
+          /*
+           * Enough smoothing to feel unhurried, little enough that the scene
+           * has visibly caught up by the time a fast scroll stops — a longer
+           * scrub leaves the reader looking at a state a second behind them.
+           */
+          scrub: 0.7,
           pin: viewport,
           /* .scene already reserves the scroll distance, so no extra spacing. */
           pinSpacing: false,
           anticipatePin: 1,
           invalidateOnRefresh: true,
+          /*
+           * The breathing and the travelling dot belong to the resting state
+           * only. Suspending them the moment the reader moves keeps the scene
+           * free of anything running behind the scroll-driven work.
+           */
+          onUpdate: (self) => {
+            const resting = self.progress < 0.004
+            for (const loop of ambient) {
+              if (resting === loop.paused()) loop.paused(!resting)
+            }
+          },
         },
       })
 

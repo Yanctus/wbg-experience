@@ -195,6 +195,19 @@ export function Scene01() {
 
             {/* 5 — typography */}
             <div className={styles.content} data-scene-content>
+              {/*
+                The opening line. It occupies the headline's own optical
+                position and is absolutely placed, so handing over to the
+                headline is a cross-fade in one spot rather than a reflow.
+                The inner span carries the load-in so the scroll-out on the
+                outer element can never fight it for the same property.
+              */}
+              <p className={styles.intro} data-scene-intro>
+                <span className={styles.introInner} data-scene-intro-inner>
+                  Jede große Geschichte beginnt auf einem leeren Blatt.
+                </span>
+              </p>
+
               <p className={styles.eyebrow} data-scene-eyebrow>
                 WBG Mieterschutz eG
               </p>
@@ -208,6 +221,21 @@ export function Scene01() {
               <p className={styles.subline} data-scene-subline>
                 Aus Planung entsteht Zuhause.
               </p>
+            </div>
+
+            {/*
+              Scroll affordance. A label, a hairline and a single dot that
+              travels it — no arrow, no bounce. It sits above the sheet because
+              it is an invitation to act, and it is gone before the sheet ever
+              reaches it.
+            */}
+            <div className={styles.scrollHint} data-scene-hint>
+              <span className={styles.scrollHintInner} data-scene-hint-inner>
+                <span className={styles.scrollHintLabel}>Geschichte entdecken</span>
+                <span className={styles.scrollHintLine} data-scene-hint-line>
+                  <span className={styles.scrollHintDot} data-scene-hint-dot />
+                </span>
+              </span>
             </div>
 
             {/* 6 — scene 02 grows on the enlarged blueprint */}
