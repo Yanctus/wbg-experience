@@ -257,6 +257,24 @@ export function useScene01Animation(rootRef: RefObject<HTMLElement | null>, enab
         }
       }
 
+      /*
+       * How far scene 02 has to pull the sheet back so the tilted board lands
+       * inside the frame with its edges visible.
+       *
+       * It has to be computed, not a fixed factor: the dive's own covering scale
+       * depends on the viewport's aspect (about 2.5x on a wide screen but over
+       * 4x on a tall phone), so a constant would leave the board far wider than
+       * the screen on mobile.
+       */
+      const SHEET_WIDTH_FRACTION = 0.8567
+      const boardScale = () => {
+        const { boxWidth } = measureAtRest()
+        if (!boxWidth) return 1
+        const width = diveScale() * boxWidth * SHEET_WIDTH_FRACTION
+        const target = window.innerWidth * (compact ? 1 : 0.92)
+        return Math.min(1, target / width)
+      }
+
       /* Scale at which the sheet's silhouette covers the viewport, with margin. */
       const diveScale = () => {
         const { boxWidth, boxHeight } = measureAtRest()
@@ -511,8 +529,14 @@ export function useScene01Animation(rootRef: RefObject<HTMLElement | null>, enab
         position: scene01Share + diveShare,
         duration: scene02Share,
         compact,
+        boardScale,
         targets: {
+          tilt: pick('[data-scene-tilt]'),
+          stage: pick('[data-scene-stage]'),
+          content: pick('[data-scene-content]'),
           plan: blueprint,
+          boardSurface: pick('[data-scene-board-surface]'),
+          paper: pick('[data-scene-paper]'),
           wallGlow: pick('[data-scene-wall-glow]'),
           building: pick('[data-scene-02-building]'),
           wireframe: pick('[data-scene-02-wireframe]'),

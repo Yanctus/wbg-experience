@@ -1,21 +1,36 @@
 import gsap from 'gsap'
 
 /**
- * Scene 02's choreography — the building constructed out of the floor plan.
+ * Scene 02 — the drawing becomes the foundation the building is built on.
  *
- * It is added to the *same* master timeline as scene 01 and the dive, rather
- * than getting its own ScrollTrigger. That is what keeps the handover seamless:
- * there is one pin and one scrubbed timeline for the whole experience, so the
- * enlarged plan simply stays where the dive left it while the building grows on
- * top of it. A second trigger would re-pin and produce exactly the hard cut the
- * sequence is designed to avoid.
+ * Six phases on the *same* master timeline as scene 01 and the dive, never a
+ * second ScrollTrigger: one pin and one scrubbed timeline for the whole
+ * experience is what keeps this a single continuous transformation instead of a
+ * sequence of scenes. Nothing before the fullscreen plan is touched.
+ *
+ *   1  the plan is held fullscreen, so the viewer can read it
+ *   2  the whole sheet tilts back into an architectural presentation angle
+ *   3  the paper becomes a clean presentation board, the plan still printed on it
+ *   4  the building grows out of the plan, storey by storey
+ *   5  the plan recedes into the board it is printed on
+ *   6  a quiet close: pale board, complete wireframe
  */
 
 export type Scene02Targets = {
-  /** The floor plan itself — it fades back but never fully disappears. */
+  /** Whole-sheet tilt target — perspective comes from its parent. */
+  tilt?: HTMLElement
+  /** The ground the board is presented against. */
+  stage?: HTMLElement
+  /** The printed plan. */
   plan?: HTMLElement
+  /** Flat surface that turns the paper into a presentation board. */
+  boardSurface?: HTMLElement
   /** Blurred copy of the plan's heaviest ink, used to lift the walls. */
   wallGlow?: HTMLElement
+  /** The paper texture, held back as the board takes over. */
+  paper?: HTMLElement
+  /** Scene 01's typography, which the drawing back off re-exposes. */
+  content?: HTMLElement
   /** Shared transform target for every building layer. */
   building?: HTMLElement
   wireframe?: HTMLElement
@@ -32,40 +47,48 @@ type BuildOptions = {
   duration: number
   targets: Scene02Targets
   compact: boolean
+  /** Computed pull-back that lands the tilted board inside the viewport. */
+  boardScale: () => number
 }
 
 /**
- * Where the building sits inside its own image, as fractions of the image
- * height measured from the bottom, and where the storeys divide within that.
- *
- * Only the two extents depend on how the asset is framed — if the wireframe is
- * delivered with different margins, correcting those two numbers re-times every
- * stage. The stops in between are proportions of the building itself: a taller
- * ground floor, three similar upper storeys, then the roof and its details as a
- * shallow final band.
+ * The presentation angle. The brief asks for 55–65°; 58° reads as a drawing
+ * board seen from standing height without foreshortening the plan so far that it
+ * stops being readable.
  */
-const BUILDING_EXTENT = { bottom: 0.22, top: 0.87 }
+const BOARD_TILT = 58
+const BOARD_TILT_COMPACT = 52
 
-const STAGE_STOPS = [
-  { at: 0.0, label: 'foundation' },
-  { at: 0.3, label: 'ground floor' },
-  { at: 0.44, label: 'first upper floor' },
-  { at: 0.58, label: 'second upper floor' },
-  { at: 0.86, label: 'remaining upper floors' },
-  { at: 1.0, label: 'roof and rooftop details' },
+/*
+ * As the sheet tilts it also settles downwards, which together with the computed
+ * pull-back turns it from a surface filling the screen into a board with visible
+ * edges — the thing the building can then be seen standing on.
+ */
+const BOARD_SETTLE_Y = 13
+const BOARD_SETTLE_Y_COMPACT = 6
+
+/**
+ * Construction stages, as fractions of the wireframe asset's height measured
+ * from its bottom edge. Read off the asset itself: its footprint starts at
+ * 0.247, the balcony slabs land at 0.40 / 0.49 / 0.58 / 0.67, the parapet at
+ * 0.75, and the roof with its rooftop boxes tops out at 0.87.
+ *
+ * If the asset is ever re-exported with different margins, these are the only
+ * numbers that need revisiting.
+ */
+const REVEAL_START = 0.24
+const STAGES = [0.4, 0.49, 0.58, 0.75, 0.95]
+
+/** Windows for each stage, as fractions of scene 02: rise, then a short hold. */
+const STAGE_WINDOWS: Array<[number, number]> = [
+  [0.44, 0.55],
+  [0.57, 0.66],
+  [0.68, 0.76],
+  [0.78, 0.87],
+  [0.88, 0.96],
 ]
 
-/** Maps a stop within the building to a `--reveal` percentage on the image. */
-function revealAt(stop: number): string {
-  const { bottom, top } = BUILDING_EXTENT
-  const fraction = bottom + stop * (top - bottom)
-  /*
-   * The last stop is pushed past the image edge so the feathered band clears
-   * the roof completely instead of leaving it half-masked.
-   */
-  const overshoot = stop >= 1 ? 0.14 : 0
-  return `${((fraction + overshoot) * 100).toFixed(2)}%`
-}
+const reveal = (fraction: number) => `${(fraction * 100).toFixed(2)}%`
 
 export function buildScene02Intro({
   timeline,
@@ -73,8 +96,10 @@ export function buildScene02Intro({
   duration,
   targets,
   compact,
+  boardScale,
 }: BuildOptions) {
-  const { plan, wallGlow, building, wireframe, lines, solid, shadow } = targets
+  const { tilt, stage, plan, boardSurface, wallGlow, paper, building, content } = targets
+  const { wireframe, lines, solid, shadow } = targets
 
   /* Fractions of scene 02's own stretch, so the beats read as a storyboard. */
   const at = (fraction: number) => position + fraction * duration
@@ -82,69 +107,112 @@ export function buildScene02Intro({
 
   const revealTargets = [wireframe, lines].filter(Boolean) as HTMLElement[]
   const bodyLayers = [shadow, solid, ...revealTargets].filter(Boolean) as HTMLElement[]
+  const hasBuilding = revealTargets.length > 0
+
+  const settleY = compact ? BOARD_SETTLE_Y_COMPACT : BOARD_SETTLE_Y
+  const tiltAngle = compact ? BOARD_TILT_COMPACT : BOARD_TILT
 
   /* ------------------------------------------------- initial state */
 
-  if (revealTargets.length) {
-    gsap.set(revealTargets, { '--reveal': revealAt(0) })
-  }
-  if (bodyLayers.length) {
-    gsap.set(bodyLayers, { opacity: 0 })
-  }
-  if (building) {
-    gsap.set(building, { yPercent: compact ? 1.4 : 2.2, scale: 0.986 })
-  }
-  if (wallGlow) {
-    gsap.set(wallGlow, { opacity: 0 })
-  }
+  if (revealTargets.length) gsap.set(revealTargets, { '--reveal': reveal(REVEAL_START) })
+  if (bodyLayers.length) gsap.set(bodyLayers, { opacity: 0 })
+  if (building) gsap.set(building, { yPercent: compact ? 1.2 : 1.8, scale: 0.988 })
+  if (wallGlow) gsap.set(wallGlow, { opacity: 0 })
+  if (boardSurface) gsap.set(boardSurface, { opacity: 0 })
 
   /*
-   * 0 – 10 %: nothing moves. The plan is held fullscreen and fully visible so
-   * the dive has somewhere to land before construction starts.
+   * Phase 1 — 0 to 8 %: nothing moves. The plan is held fullscreen so the dive
+   * has somewhere to land and the viewer gets a moment to read the drawing.
    */
 
   /*
-   * 6 – 22 %: the heaviest lines in the plan lift slightly — the walls the
-   * building is about to stand on. Subtle by design: this is emphasis, not a
-   * glow effect.
+   * Phase 2 — 8 to 34 %: the sheet tilts back into the presentation angle and
+   * settles into frame. One long eased move, no staging, so it reads as a single
+   * deliberate gesture rather than a mechanism.
    */
-  if (wallGlow) {
+  if (tilt) {
     timeline.to(
-      wallGlow,
-      { opacity: compact ? 0.44 : 0.52, duration: span(0.16), ease: 'power2.out' },
-      at(0.06),
+      tilt,
+      {
+        rotateX: tiltAngle,
+        yPercent: settleY,
+        scale: boardScale,
+        duration: span(0.26),
+        ease: 'power2.inOut',
+      },
+      at(0.08),
     )
   }
 
   /*
-   * 18 – 26 %: the wireframe is brought in over the plan. It is still fully
-   * masked, so this only establishes the layer — the reveal below is what makes
-   * the building appear.
+   * The dive covered the headline by growing the sheet over it. Now that the
+   * sheet draws back off the edges of the screen, that cover is gone — so the
+   * typography is retired here, early in the tilt, before any of it can peek out
+   * from behind the receding board.
    */
-  if (bodyLayers.length) {
-    timeline.to(bodyLayers, { opacity: 1, duration: span(0.08), ease: 'power1.inOut' }, at(0.18))
+  if (content) {
+    timeline.to(content, { opacity: 0, duration: span(0.1), ease: 'power1.inOut' }, at(0.07))
   }
 
   /*
-   * 20 – 94 %: the storeys, bottom to top. Each stage eases in and out of its
-   * own stop and is followed by a short hold, which is what makes the building
-   * read as constructed in stages rather than extruded in one continuous push.
+   * The plan's heaviest lines lift while it is still flat — the walls the
+   * building is about to stand on. Deliberately slight: emphasis, not an effect.
    */
-  if (revealTargets.length) {
-    const windows: Array<[number, number]> = [
-      [0.2, 0.34], // ground floor
-      [0.37, 0.49], // first upper floor
-      [0.52, 0.63], // second upper floor
-      [0.66, 0.81], // remaining upper floors
-      [0.84, 0.94], // roof and rooftop details
-    ]
+  if (wallGlow) {
+    timeline.to(
+      wallGlow,
+      { opacity: compact ? 0.4 : 0.48, duration: span(0.14), ease: 'power2.out' },
+      at(0.05),
+    )
+  }
 
-    windows.forEach(([start, end], index) => {
-      const stop = STAGE_STOPS[index + 1]
+  /*
+   * Phase 3 — 30 to 48 %: paper becomes presentation board. The flat surface
+   * fades in over the texture while the paper layer itself is held back, so
+   * grain and blotches recede and the sheet reads as a museum board. The plan is
+   * printed on top of it and is not touched here.
+   */
+  if (boardSurface) {
+    timeline.to(boardSurface, { opacity: 0.94, duration: span(0.18), ease: 'power1.inOut' }, at(0.3))
+  }
+  if (paper) {
+    timeline.to(paper, { opacity: 0.72, duration: span(0.18), ease: 'power1.inOut' }, at(0.3))
+  }
+  /*
+   * The surround is lifted towards the board's own tone at the same time. It
+   * turns the desk-grey ground into gallery light, and it is also what stops the
+   * board's far edge from cutting a hard seam across the building: the wireframe
+   * is transparent, so wherever it crosses that edge the backdrop shows through
+   * it. Bringing the two tones together makes the crossing almost invisible.
+   */
+  if (stage) {
+    timeline.to(
+      stage,
+      { backgroundColor: '#f4f1ec', duration: span(0.22), ease: 'power1.inOut' },
+      at(0.3),
+    )
+  }
+  /* The wall emphasis belongs to the paper drawing, so it retires with it. */
+  if (wallGlow) {
+    timeline.to(wallGlow, { opacity: 0, duration: span(0.16), ease: 'power1.inOut' }, at(0.32))
+  }
+
+  /*
+   * Phase 4 — 44 to 96 %: the building grows out of the plan, bottom to top.
+   * Each stage rises to its own storey and is followed by a short hold, so the
+   * walls read as built rather than extruded. The mask edge is feathered, so no
+   * stage ever lands as a hard line.
+   */
+  if (bodyLayers.length) {
+    timeline.to(bodyLayers, { opacity: 1, duration: span(0.06), ease: 'power1.inOut' }, at(0.4))
+  }
+
+  if (hasBuilding) {
+    STAGE_WINDOWS.forEach(([start, end], index) => {
       timeline.to(
         revealTargets,
         {
-          '--reveal': revealAt(stop.at),
+          '--reveal': reveal(STAGES[index]),
           duration: span(end - start),
           ease: 'power2.inOut',
         },
@@ -154,43 +222,41 @@ export function buildScene02Intro({
   }
 
   /*
-   * 20 – 100 %: the plan recedes. It is deliberately still legible for most of
-   * the construction — dropping to a trace only at the very end — so the
-   * building never stops looking like it came out of this drawing. Lowering the
-   * opacity of a multiply layer lowers its contrast at the same time, which is
-   * why no filter animation is needed here.
+   * Phase 5 — 46 to 96 %: the plan recedes into the board it is printed on. It
+   * stays clearly legible through most of the construction and only drops to a
+   * trace at the end, so the building never stops looking like it came out of
+   * this drawing. Reducing the opacity of a multiply layer reduces its contrast
+   * at the same time, so no filter animation is needed.
    *
-   * Skipped when no building is present: fading the drawing away with nothing
-   * to hand over to would just empty the screen, so the scene degrades to
-   * "the plan holds, with its walls emphasised".
+   * Skipped without a building: fading the drawing away with nothing to hand
+   * over to would only empty the board.
    */
-  if (plan && revealTargets.length) {
-    timeline.to(plan, { opacity: 0.62, duration: span(0.34), ease: 'power1.inOut' }, at(0.2))
-    timeline.to(plan, { opacity: 0.34, duration: span(0.24), ease: 'power1.inOut' }, at(0.56))
-    timeline.to(plan, { opacity: 0.08, duration: span(0.18), ease: 'power2.inOut' }, at(0.82))
+  if (plan && hasBuilding) {
+    timeline.to(plan, { opacity: 0.66, duration: span(0.28), ease: 'power1.inOut' }, at(0.46))
+    timeline.to(plan, { opacity: 0.32, duration: span(0.2), ease: 'power1.inOut' }, at(0.74))
+    timeline.to(plan, { opacity: 0.07, duration: span(0.14), ease: 'power2.inOut' }, at(0.88))
   }
 
-  /* The wall emphasis retires with the drawing it belongs to — but only if
-     there is a building taking over; otherwise it stays as the closing state. */
-  if (wallGlow && revealTargets.length) {
-    timeline.to(wallGlow, { opacity: 0, duration: span(0.3), ease: 'power1.inOut' }, at(0.58))
+  /* The board keeps cleaning up as the drawing leaves it. */
+  if (boardSurface && hasBuilding) {
+    timeline.to(boardSurface, { opacity: 1, duration: span(0.2), ease: 'power1.inOut' }, at(0.76))
   }
 
   /*
-   * 20 – 100 %: a slow lift and a fraction of growth across the whole build, so
-   * the building feels like it is rising out of the paper rather than being
-   * unmasked in place. Small enough to stay subliminal.
+   * Phase 6 — the building's own slow lift across the whole build, so it reads
+   * as rising out of the board rather than being unmasked in place. Small enough
+   * to stay subliminal.
    */
-  if (building && revealTargets.length) {
+  if (building && hasBuilding) {
     timeline.to(
       building,
       {
-        yPercent: compact ? -1.2 : -2,
-        scale: 1.022,
-        duration: span(0.8),
+        yPercent: compact ? -0.9 : -1.5,
+        scale: 1.016,
+        duration: span(0.54),
         ease: 'power1.inOut',
       },
-      at(0.2),
+      at(0.42),
     )
   }
 }

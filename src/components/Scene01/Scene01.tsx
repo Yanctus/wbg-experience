@@ -71,7 +71,7 @@ export function Scene01() {
 
       <section ref={rootRef} className={styles.scene} aria-labelledby="scene01-title">
         <div className={styles.viewport} data-scene-viewport>
-          <div className={styles.stage}>
+          <div className={styles.stage} data-scene-stage>
             {/* 1 — paper background, fills the viewport */}
             <div className={styles.background} data-scene-background aria-hidden="true">
               <img
@@ -100,16 +100,25 @@ export function Scene01() {
             {/* 3 + 4 — sheet and blueprint share one transform so they stay locked together */}
             <div className={styles.paperPerspective} aria-hidden="true">
               {/*
-                The anchor holds the static pose. GSAP is the sole writer of
-                .paperStage's transform — sharing one element would make GSAP
-                absorb the centring offset and then animate it away.
+                Scene 02 tilts the whole sheet back into a presentation angle.
+                .paperBoard supplies the perspective for that move and .paperTilt
+                is its sole transform target, so the tilt composes with — rather
+                than fights — the dive's camera and scene 01's 2.5D pose. Both
+                start untransformed, so nothing before scene 02 is affected.
               */}
-              <div className={styles.paperAnchor} data-scene-paper-anchor>
+              <div className={styles.paperBoard}>
+                <div className={styles.paperTilt} data-scene-tilt>
+                  {/*
+                    The anchor holds the static pose. GSAP is the sole writer of
+                    .paperStage's transform — sharing one element would make GSAP
+                    absorb the centring offset and then animate it away.
+                  */}
+                  <div className={styles.paperAnchor} data-scene-paper-anchor>
                 {/* The dive's camera — see useScene01Animation. */}
                 <div className={styles.paperCamera} data-scene-camera>
                   <div className={styles.paperStage} data-scene-paper-stage>
                     <div className={styles.paperParallax} data-scene-paper-parallax>
-                      <div className={styles.paper}>
+                      <div className={styles.paper} data-scene-paper>
                         <img
                           src={ASSETS.paper}
                           alt=""
@@ -119,6 +128,15 @@ export function Scene01() {
                           fetchPriority="high"
                         />
                       </div>
+
+                      {/*
+                        Scene 02 fades this in to turn the sheet into a clean
+                        presentation board: it covers the paper texture and its
+                        imperfections with a flat, slightly brighter surface,
+                        while sitting *under* the printed plan so the drawing
+                        stays on top of it.
+                      */}
+                      <div className={styles.boardSurface} data-scene-board-surface />
 
                       {/*
                         One element carries the reveal, the opacity and the
@@ -156,13 +174,15 @@ export function Scene01() {
                         <span className={styles.wallGlowTint} />
                       </div>
                     </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
 
             {/* 5 — typography */}
-            <div className={styles.content}>
+            <div className={styles.content} data-scene-content>
               <p className={styles.eyebrow} data-scene-eyebrow>
                 WBG Mieterschutz eG
               </p>

@@ -27,28 +27,56 @@
 
 /* The rise-and-grow target — one transform for every layer at once. */
 .building {
+  /*
+   * Where the building's own base line sits on screen, and how big it is drawn.
+   * The base is placed to coincide with the centre of the tilted presentation
+   * board, so the walls stand on the plan rather than floating over it.
+   */
+  --building-base: 71%;
+  /*
+   * The wireframe's own footprint-to-roof span is 62.4% of the asset height, and
+   * its base sits at --building-base, so the vh cap is what keeps the roof inside
+   * the viewport rather than clipped against the top edge.
+   */
+  --building-size: min(88vw, 72rem, 92vh);
+  /* Where the base line falls inside the asset, measured from its top edge.
+     The wireframe's own footprint starts at 24.7% of the image from the bottom. */
+  --building-base-in-asset: 75.3%;
+  /*
+   * The asset is not centred in its own frame — its footprint spans 12.9% to
+   * 96.3% across, so its centre sits 4.6% right of the image centre. Cancelling
+   * that here is what puts the building's footprint over the plan's, rather than
+   * off to one side of it.
+   */
+  --building-offset-x: 4.6%;
+
   position: absolute;
   inset: 0;
   will-change: transform;
 }
 
+/*
+ * Each layer is exactly the asset's box, not the viewport: the reveal mask below
+ * is expressed in fractions of the *image*, so the mask and the box have to be
+ * the same rectangle. Anchoring `top` at the base line and pulling back by the
+ * base's position inside the asset puts the building's footprint precisely on
+ * the board, at any viewport size.
+ */
 .layer {
   position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  left: 50%;
+  top: var(--building-base);
+  width: var(--building-size);
+  aspect-ratio: 1;
+  transform: translate(
+    calc(-50% - var(--building-offset-x)),
+    calc(var(--building-base-in-asset) * -1)
+  );
 }
 
-/*
- * The building is drawn at its natural scale, capped so it always keeps a
- * margin to the viewport edges. `contain` means an asset with different
- * proportions than expected still fits rather than cropping.
- */
 .layer img {
-  width: min(82vw, 68rem);
-  max-height: 84vh;
-  height: auto;
+  width: 100%;
+  height: 100%;
   object-fit: contain;
 }
 
@@ -90,9 +118,9 @@
 }
 
 @media (max-width: 720px) {
-  .layer img {
-    width: 94vw;
-    max-height: 62vh;
+  .building {
+    --building-base: 68%;
+    --building-size: min(96vw, 84vh);
   }
 
   /* A slightly wider feather reads better at small sizes. */
