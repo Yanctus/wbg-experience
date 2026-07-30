@@ -204,7 +204,19 @@ export function Scene01() {
               */}
               <p className={styles.intro} data-scene-intro>
                 <span className={styles.introInner} data-scene-intro-inner>
-                  Jede große Geschichte beginnt auf einem leeren Blatt.
+                  {/*
+                    Both sentences open on the same two words. Splitting them
+                    off is what lets the opening line *become* the headline:
+                    the tail leaves, and these words travel up into the
+                    headline's first line rather than being swapped for it.
+                  */}
+                  <span className={styles.introShared} data-scene-intro-shared>
+                    Jedes Zuhause
+                  </span>
+                  <span className={styles.introTail} data-scene-intro-tail>
+                    {' '}
+                    war einmal nur eine Zeichnung.
+                  </span>
                 </span>
               </p>
 

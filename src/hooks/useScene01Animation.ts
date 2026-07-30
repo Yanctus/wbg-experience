@@ -174,6 +174,8 @@ export function useScene01Animation(rootRef: RefObject<HTMLElement | null>, enab
       const paperAnchor = pick('[data-scene-paper-anchor]')
       const intro = pick('[data-scene-intro]')
       const introInner = pick('[data-scene-intro-inner]')
+      const introShared = pick('[data-scene-intro-shared]')
+      const introTail = pick('[data-scene-intro-tail]')
       const hint = pick('[data-scene-hint]')
       const hintInner = pick('[data-scene-hint-inner]')
       const hintLine = pick('[data-scene-hint-line]')
@@ -224,12 +226,109 @@ export function useScene01Animation(rootRef: RefObject<HTMLElement | null>, enab
       if (introInner) gsap.set(introInner, { opacity: 0, y: 14 })
       if (hintInner) gsap.set(hintInner, { opacity: 0, y: 8 })
 
+      const titleLine1 = titleLines[0] as HTMLElement | undefined
+
+      /*
+       * The opening line becomes the headline.
+       *
+       * Both sentences start on "Jedes Zuhause", so instead of trading one
+       * block of text for another, the tail leaves and those two words travel
+       * up into the headline's first line and grow to its size. The handover is
+       * then a 0.2s cross-fade between two identical words sitting in the same
+       * place — which reads as the sentence resolving into the headline rather
+       * than as a swap.
+       *
+       * The geometry is measured, not assumed: the target line is in the DOM at
+       * opacity 0, so it already has its final position, and the deltas are
+       * function-based so they are read when the move begins — after any layout
+       * settling, and correct at whatever size the window happens to be.
+       */
       const arrival = gsap.timeline({ defaults: { ease: 'power2.out' } })
+
       if (introInner) {
-        arrival.to(introInner, { opacity: 1, y: 0, duration: 1.5 }, 0.35)
+        /* After the loader's own 700ms veil has lifted, not behind it. */
+        arrival.to(introInner, { opacity: 1, y: 0, duration: 1.3 }, 0.8)
       }
       if (hintInner) {
-        arrival.to(hintInner, { opacity: 1, y: 0, duration: 1.1 }, 1.5)
+        arrival.to(hintInner, { opacity: 1, y: 0, duration: 1.1 }, 1.9)
+      }
+
+      /* Roughly 2.3s of stillness on the sentence before it starts to move. */
+      const HOLD_UNTIL = 4.4
+
+      if (introTail) {
+        arrival.to(introTail, { opacity: 0, duration: 0.75, ease: 'power2.inOut' }, HOLD_UNTIL)
+      }
+
+      if (introShared && titleLine1) {
+        /*
+         * The headline's first line is parked 20px low until it takes over, so
+         * its live rect is *not* where the words have to land. Both rects are
+         * therefore corrected by whatever transform GSAP currently holds on the
+         * element, which gives the two resting boxes — the only pair whose
+         * difference is the actual travel.
+         */
+        const restingRect = (el: HTMLElement) => {
+          const rect = el.getBoundingClientRect()
+          const dx = Number(gsap.getProperty(el, 'x')) || 0
+          const dy = Number(gsap.getProperty(el, 'y')) || 0
+          return { left: rect.left - dx, top: rect.top - dy, height: rect.height }
+        }
+
+        const measure = () => ({
+          from: restingRect(introShared),
+          to: restingRect(titleLine1),
+        })
+
+        arrival.to(
+          introShared,
+          {
+            x: () => {
+              const { from, to } = measure()
+              return to.left - from.left
+            },
+            y: () => {
+              const { from, to } = measure()
+              return to.top + to.height / 2 - (from.top + from.height / 2)
+            },
+            scale: () => {
+              const a = Number.parseFloat(getComputedStyle(introShared).fontSize)
+              const b = Number.parseFloat(getComputedStyle(titleLine1).fontSize)
+              return a > 0 ? b / a : 1
+            },
+            duration: 1.35,
+            ease: 'power2.inOut',
+          },
+          HOLD_UNTIL + 0.35,
+        )
+
+        /*
+         * The swap, once the travel has actually landed — 0.35s of lead-in plus
+         * 1.35s of travel. Cross-fading any earlier trades the words over while
+         * they are still short of the target, which lands as a visible jump.
+         */
+        const LANDED = HOLD_UNTIL + 1.7
+        /*
+         * The first line takes over in place: it drops its 20px offset before
+         * the cross-fade rather than sliding it off during it, which would make
+         * the two copies drift apart in exactly the moment they are both
+         * visible. Lines two and three keep the offset — they arrive later.
+         */
+        arrival.set(titleLine1, { y: 0 }, LANDED)
+        arrival.to(titleLine1, { opacity: 1, duration: 0.24, ease: 'none' }, LANDED)
+        arrival.to(introShared, { opacity: 0, duration: 0.24, ease: 'none' }, LANDED)
+      }
+
+      /* The rest of the headline settles in behind the line that just arrived. */
+      if (titleLines.length > 1) {
+        arrival.to(
+          titleLines.slice(1),
+          { opacity: 1, y: 0, duration: 0.85, ease: 'power2.out', stagger: 0.14 },
+          HOLD_UNTIL + 1.84,
+        )
+      }
+      if (eyebrow) {
+        arrival.to(eyebrow, { opacity: 1, y: 0, duration: 0.9 }, HOLD_UNTIL + 1.72)
       }
 
       /*
@@ -388,14 +487,9 @@ export function useScene01Animation(rootRef: RefObject<HTMLElement | null>, enab
       const reveal = { progress: 0 }
 
       /*
-       * 0 – 10 %: the opening line leaves as the reader takes over, rising
-       * slightly as it goes so the handover has a direction. The headline
-       * arrives at 27 %, well clear of it — a cross-fade in the same spot, not
-       * a cut.
+       * The opening line resolves into the headline on its own, before any
+       * scrolling, so nothing here touches it.
        */
-      if (intro) {
-        scene01.to(intro, { opacity: 0, y: -16, duration: 0.1, ease: 'power2.in' }, 0)
-      }
       /* The invitation retires the moment it has been accepted. */
       if (hint) {
         scene01.to(hint, { opacity: 0, y: 10, duration: 0.05, ease: 'power2.in' }, 0)
@@ -428,18 +522,6 @@ export function useScene01Animation(rootRef: RefObject<HTMLElement | null>, enab
       )
       if (blueprint) {
         scene01.to(blueprint, { opacity: 0.82, duration: 0.2, ease: 'power1.out' }, 0.1)
-      }
-
-      // 20 – 40 %: the eyebrow arrives first, then the headline lines.
-      if (eyebrow) {
-        scene01.to(eyebrow, { opacity: 1, y: 0, duration: 0.07, ease: 'power2.out' }, 0.2)
-      }
-      if (titleLines.length) {
-        scene01.to(
-          titleLines,
-          { opacity: 1, y: 0, duration: 0.09, ease: 'power2.out', stagger: 0.035 },
-          0.27,
-        )
       }
 
       // 35 – 55 %: the sheet lifts a touch, the shadow drifts and deepens.
@@ -618,6 +700,20 @@ export function useScene01Animation(rootRef: RefObject<HTMLElement | null>, enab
            * free of anything running behind the scroll-driven work.
            */
           onUpdate: (self) => {
+            /*
+             * Someone who starts scrolling during the title sequence has
+             * already made their choice — let it resolve quickly instead of
+             * making them wait it out, but still resolve rather than cut.
+             *
+             * Gated on the actual scroll position: ScrollTrigger reports a
+             * sub-pixel progress of its own during the first refresh, which is
+             * enough to trip a progress-based test and skip the sequence on
+             * load.
+             */
+            if (window.scrollY > 4 && arrival.isActive() && arrival.timeScale() === 1) {
+              arrival.timeScale(3.2)
+            }
+
             const resting = self.progress < 0.004
             for (const loop of ambient) {
               if (resting === loop.paused()) loop.paused(!resting)

@@ -448,6 +448,18 @@
   display: block;
 }
 
+/*
+ * The words the two sentences share. inline-block so it can be transformed,
+ * nowrap so it always stays one measurable piece, and the origin at its left
+ * middle so scaling it up keeps that corner pinned while it travels.
+ */
+.introShared {
+  display: inline-block;
+  white-space: nowrap;
+  transform-origin: left center;
+  will-change: transform;
+}
+
 /* --------------------------------------------------------- scroll hint */
 
 .scrollHint {
