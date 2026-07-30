@@ -10,17 +10,37 @@ body {
   padding: 0;
 }
 
+html {
+  /* No horizontal scrollbar, whatever the layers do. */
+  overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
-  background-color: #e8e4dd;
-  color: #1c1a17;
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  overflow-x: hidden;
+  background-color: #ece7df;
+  color: #26221c;
+  /*
+   * System fonts only — nothing is downloaded. The stack favours the neutral,
+   * precise grotesques that ship with each platform.
+   */
+  font-family: 'Helvetica Neue', Helvetica, 'Segoe UI', Inter, Roboto, system-ui,
+    -apple-system, Arial, sans-serif;
+  font-synthesis: none;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
 }
 
 img {
   display: block;
   max-width: 100%;
+}
+
+/* Decorative layers must never intercept selection or pointer input. */
+img[alt=''] {
+  user-select: none;
+  -webkit-user-drag: none;
 }
 
 #root {

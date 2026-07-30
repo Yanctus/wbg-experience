@@ -1,16 +1,506 @@
+/*
+ * Scene 01 — layout, layer stack, typography and the static transform bases.
+ * All motion lives in useScene01Animation.ts.
+ *
+ * Asset note: the supplied PNGs carry no alpha channel and have a checkerboard
+ * pattern baked into their "transparent" areas. Two techniques neutralise that
+ * without touching the files:
+ *   - the sheet is cut out with a clip-path traced from its silhouette
+ *   - every overlay is composited with mix-blend-mode: multiply, where the
+ *     near-white field turns into a no-op; `--key` lifts the remaining
+ *     checkerboard values up to pure white first.
+ */
+
 .scene {
+  --scene-length: 350vh;
+  /* Capped so the sheet does not grow without limit on very wide displays. */
+  --paper-width: min(58vw, 64rem);
+  --paper-inset: 1vw;
+  --paper-rotate: -1.4deg;
+
+  /* Lifts near-white pixels to pure white so baked checkerboards vanish
+     under multiply, while real ink and shadow keep their density. */
+  --key: brightness(1.035);
+
   position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
+  width: 100%;
+  height: var(--scene-length);
+}
+
+/*
+ * Height only — the pinning itself is done by ScrollTrigger (pinSpacing is off,
+ * because .scene already reserves the scroll distance). Using CSS sticky as
+ * well would fight the pin and make the layers drift.
+ */
+.viewport {
+  height: 100vh;
   width: 100%;
   overflow: hidden;
 }
 
+.stage {
+  position: relative;
+  height: 100%;
+  width: 100%;
+  /* Keeps every mix-blend-mode inside the scene. */
+  isolation: isolate;
+  background-color: #ece7df;
+}
+
+/* ---------------------------------------------------------------- layers */
+
+.background,
+.light,
+.grain,
+.dust {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.background img,
+.light img,
+.grain img,
+.dust img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* 1 — background ------------------------------------------------------- */
+
+.background {
+  z-index: 1;
+}
+
+.background img {
+  /* Held slightly back so the sheet on top reads as the brighter plane. */
+  filter: brightness(0.955) saturate(1.04);
+}
+
+/* 2 — shadow ----------------------------------------------------------- */
+
+/*
+ * Anchors carry the static pose (position, size, centring, base rotation).
+ * GSAP animates only the element *inside* them.
+ *
+ * This split is mandatory, not cosmetic: GSAP parses an existing `transform`
+ * — and the standalone `translate`/`rotate` properties — into its own state,
+ * so animating xPercent/yPercent on the same element silently replaces the
+ * -50% centring offset and the layer jumps sideways.
+ */
+.shadowAnchor,
+.paperAnchor {
+  position: absolute;
+  top: 50%;
+  right: var(--paper-inset);
+  width: var(--paper-width);
+  aspect-ratio: 1536 / 1024;
+  translate: 0 -50%;
+  pointer-events: none;
+}
+
+/*
+ * The blend and the white-clip sit on the anchor, not on the inner element:
+ * the anchor's `translate` already makes it a stacking context, so a
+ * mix-blend-mode further inside would have no backdrop to multiply against and
+ * the sheet's near-white field would be painted normally — lightening the
+ * background instead of shading it.
+ */
+.shadowAnchor {
+  z-index: 2;
+  mix-blend-mode: multiply;
+  /* Static softening — the scroll timeline only scales and fades it, which
+     reads as "softer" without re-rasterising a blur every frame. */
+  filter: var(--key) blur(4px);
+}
+
+.shadow {
+  position: absolute;
+  inset: 0;
+  opacity: 0.28;
+  transform-origin: 50% 55%;
+}
+
+.shadow img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* 3 + 4 — sheet and blueprint ------------------------------------------ */
+
+.paperPerspective {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  perspective: 1800px;
+  perspective-origin: 55% 45%;
+  pointer-events: none;
+}
+
+.paperAnchor {
+  rotate: var(--paper-rotate);
+  transform-style: preserve-3d;
+}
+
+.paperStage {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+.paperParallax {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+}
+
+.paper {
+  position: absolute;
+  inset: 0;
+}
+
+.paper img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  /* Lifts the sheet off the background, which is a very close tone. */
+  filter: brightness(1.055) saturate(0.98);
+  /*
+   * Silhouette traced from the sheet itself (the paper is warm-toned, the
+   * baked checkerboard and drop shadow are neutral grey). This removes the
+   * checkerboard and the baked shadow while keeping the deckled edges.
+   */
+  clip-path: polygon(
+    91.69% 48.13%, 91.62% 51.49%, 91.5% 54.84%, 91.38% 58.21%, 91.26% 61.63%,
+    91.01% 65.06%, 90.86% 68.62%, 90.76% 72.31%, 90.38% 75.97%, 90.13% 79.88%,
+    89.94% 84.04%, 89.6% 88.31%, 88.34% 91.79%, 83.98% 91.21%, 80.16% 90.6%,
+    76.96% 90.3%, 73.84% 89.52%, 71.28% 89.23%, 68.89% 88.82%, 66.64% 88.31%,
+    64.72% 88.26%, 62.78% 87.74%, 61.05% 87.59%, 59.41% 87.55%, 57.77% 87.07%,
+    56.21% 86.65%, 54.72% 86.47%, 53.27% 86.26%, 51.84% 86.22%, 50.43% 85.97%,
+    49.04% 85.5%, 47.62% 85.39%, 46.21% 85.17%, 44.72% 85.2%, 43.29% 84.82%,
+    41.83% 84.4%, 40.18% 84.47%, 38.52% 84.29%, 36.88% 83.86%, 35.19% 83.34%,
+    33.17% 83.26%, 31.06% 83.01%, 28.92% 82.52%, 26.55% 82.04%, 23.75% 81.74%,
+    20.73% 81.25%, 17.34% 80.66%, 13.61% 79.83%, 9.08% 79.02%, 6.97% 76.01%,
+    7.66% 71.33%, 8.3% 66.95%, 8.81% 62.87%, 9.42% 58.95%, 9.86% 55.23%,
+    10.57% 51.61%, 11.02% 48.13%, 11.48% 44.73%, 11.8% 41.37%, 12.37% 38.07%,
+    12.87% 34.79%, 13.12% 31.4%, 13.44% 27.98%, 13.83% 24.52%, 14.3% 21.02%,
+    14.86% 17.48%, 15.13% 13.53%, 15.63% 9.59%, 16.16% 5.45%, 20.24% 5.77%,
+    23.81% 6.08%, 27.07% 6.56%, 29.88% 6.83%, 32.37% 6.96%, 34.8% 7.45%,
+    37.07% 8.05%, 38.96% 8.01%, 40.86% 8.35%, 42.58% 8.41%, 44.31% 8.91%,
+    45.85% 8.72%, 47.44% 9.24%, 48.92% 9.22%, 50.39% 9.33%, 51.84% 9.46%,
+    53.28% 9.82%, 54.72% 9.8%, 56.15% 10.11%, 57.61% 10.24%, 59.09% 10.41%,
+    60.62% 10.53%, 62.16% 10.78%, 63.85% 10.74%, 65.54% 10.95%, 67.29% 11.26%,
+    69.21% 11.42%, 71.25% 11.64%, 73.36% 12.02%, 75.92% 12.02%, 78.49% 12.41%,
+    81.42% 12.76%, 84.71% 13.15%, 88.5% 13.58%, 92.64% 14.31%, 93.61% 17.97%,
+    93.29% 22.39%, 92.95% 26.56%, 92.7% 30.48%, 92.53% 34.21%, 92.34% 37.81%,
+    92.15% 41.32%, 91.95% 44.76%
+  );
+}
+
+/*
+ * The blueprint is inset into the sheet's inner area and shares the sheet's
+ * baked-in rotation (~4.4deg), so the plan reads as printed onto the paper
+ * rather than pasted on top of it.
+ *
+ * `rotate` is the standalone property on purpose: GSAP animates `transform`
+ * for the mouse parallax, and the two compose instead of overwriting.
+ *
+ * multiply sits on this element — the one that shares a stacking context with
+ * the sheet — so the plan's white field drops out completely and no rectangular
+ * image edge is ever visible.
+ */
+.blueprint {
+  position: absolute;
+  inset: 15% 17% 19% 16%;
+  rotate: 4.4deg;
+  /* Visible by default so the scene is complete without JavaScript. */
+  opacity: 0.92;
+  mix-blend-mode: multiply;
+}
+
+.blueprint img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: var(--key) contrast(1.04);
+  /* Softens the outermost few percent so the plan fades into the sheet. */
+  -webkit-mask-image: radial-gradient(
+    125% 125% at 50% 50%,
+    #000 70%,
+    rgb(0 0 0 / 55%) 88%,
+    transparent 100%
+  );
+  mask-image: radial-gradient(
+    125% 125% at 50% 50%,
+    #000 70%,
+    rgb(0 0 0 / 55%) 88%,
+    transparent 100%
+  );
+}
+
+/* 5 — typography ------------------------------------------------------- */
+
+/*
+ * On very wide displays the text moves inwards instead of clinging to the far
+ * edge, so the column and the sheet stay one composition.
+ */
+.content {
+  position: absolute;
+  z-index: 4;
+  top: 50%;
+  left: clamp(max(6vw, 2rem), calc(50vw - 42rem), 24vw);
+  width: min(34vw, 30rem);
+  transform: translateY(-50%);
+}
+
+.eyebrow {
+  margin: 0 0 clamp(1.5rem, 3vw, 2.75rem);
+  font-size: clamp(0.66rem, 0.78vw, 0.8rem);
+  font-weight: 500;
+  letter-spacing: 0.34em;
+  text-transform: uppercase;
+  color: #6d655a;
+}
+
 .title {
   margin: 0;
-  font-size: clamp(2rem, 6vw, 4.5rem);
-  font-weight: 600;
-  letter-spacing: 0.02em;
+  font-size: clamp(1.9rem, 3.5vw, 3.4rem);
+  font-weight: 400;
+  line-height: 1.16;
+  letter-spacing: -0.015em;
+  color: #26221c;
+  text-wrap: balance;
+}
+
+.titleLine {
+  display: block;
+}
+
+.subline {
+  margin: clamp(1.75rem, 3.4vw, 3rem) 0 0;
+  max-width: 24ch;
+  font-size: clamp(0.95rem, 1.05vw, 1.1rem);
+  font-weight: 400;
+  line-height: 1.6;
+  letter-spacing: 0.005em;
+  color: #5d554a;
+}
+
+/* A hairline above the subline keeps the editorial rhythm. */
+.subline::before {
+  content: '';
+  display: block;
+  width: 3.25rem;
+  height: 1px;
+  margin-bottom: 1.25rem;
+  background-color: #b9afa0;
+}
+
+/* 6 — light ------------------------------------------------------------ */
+
+.light {
+  z-index: 5;
+  opacity: 0.46;
+  mix-blend-mode: multiply;
+  will-change: transform;
+}
+
+/*
+ * This layer is a smooth warm gradient with no fine detail, so a blur costs it
+ * nothing — and it is the one place where the baked 16px checkerboard survives
+ * the white-clip, because the light rays sit well below pure white. Blurring
+ * past the pattern's period removes it completely. The slight upscale keeps the
+ * blur from sampling past the layer edges.
+ */
+.light img {
+  filter: brightness(1.05) blur(7px);
+  transform: scale(1.08);
+}
+
+/* 7 — grain ------------------------------------------------------------ */
+
+.grain {
+  z-index: 6;
+  opacity: 0.24;
+  mix-blend-mode: multiply;
+}
+
+/* A firmer clip than --key: the grain speckles live well below 240, so pushing
+   everything above that to pure white keeps the texture but drops the pattern. */
+.grain img {
+  filter: brightness(1.06);
+}
+
+/* 8 — dust ------------------------------------------------------------- */
+
+.dust {
+  z-index: 7;
+  opacity: 0.38;
+  mix-blend-mode: multiply;
+}
+
+.dust img {
+  filter: var(--key);
+}
+
+/* ---------------------------------------------------------------- loader */
+
+.loader {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.1rem;
+  background-color: #f2eee7;
+  opacity: 1;
+  transition: opacity 700ms cubic-bezier(0.33, 1, 0.68, 1);
+}
+
+.loader[data-ready='true'] {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.loaderLabel {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: #6d655a;
+}
+
+.loaderTrack {
+  width: min(15rem, 42vw);
+  height: 1px;
+  background-color: #d5cdc0;
+  overflow: hidden;
+}
+
+.loaderBar {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background-color: #6d655a;
+  transform-origin: 0 50%;
+  transition: transform 420ms cubic-bezier(0.33, 1, 0.68, 1);
+}
+
+.loaderValue {
+  margin: 0;
+  font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.12em;
+  color: #8a8074;
+}
+
+/* ------------------------------------------------------------ responsive */
+
+/* Tablet: smaller sheet, narrower text, more air between the two. */
+@media (max-width: 1024px) {
+  .scene {
+    /* Smaller sheet and a narrower column, so a clear gap stays between the
+       text and the sheet's visible edge. */
+    --paper-width: 56vw;
+    --paper-inset: 1vw;
+  }
+
+  .content {
+    width: min(33vw, 19rem);
+  }
+
+  .paperPerspective {
+    perspective: 2400px;
+  }
+}
+
+/* Mobile: text on top, sheet below — a single column, no overlap. */
+@media (max-width: 720px) {
+  .scene {
+    --scene-length: 420vh;
+    --paper-width: 100vw;
+    --paper-inset: 0vw;
+    --paper-rotate: -1deg;
+  }
+
+  .stage {
+    display: block;
+  }
+
+  /* Sheet below the text, horizontally centred. */
+  .paperAnchor,
+  .shadowAnchor {
+    top: auto;
+    bottom: 11vh;
+    right: auto;
+    left: 50%;
+    translate: -50% 0;
+  }
+
+  .content {
+    top: clamp(3.5rem, 9vh, 7rem);
+    left: 0;
+    right: 0;
+    width: auto;
+    padding: 0 max(6vw, 1.5rem);
+    transform: none;
+  }
+
+  .title {
+    font-size: clamp(1.75rem, 8.4vw, 2.5rem);
+  }
+
+  .subline {
+    max-width: 30ch;
+  }
+
+  /* Perspective is flattened on small screens — see the hook. */
+  .paperPerspective {
+    perspective: none;
+  }
+}
+
+@media (max-width: 720px) and (orientation: landscape) {
+  .scene {
+    --paper-width: 74vw;
+  }
+
+  .content {
+    top: clamp(1.5rem, 5vh, 3rem);
+  }
+}
+
+/* ------------------------------------------------------- reduced motion */
+
+@media (prefers-reduced-motion: reduce) {
+  .scene {
+    --scene-length: 100vh;
+  }
+
+  .viewport {
+    position: relative;
+  }
+
+  .blueprintClip {
+    opacity: 1;
+  }
+
+  .loader {
+    transition: none;
+  }
+
+  .loaderBar {
+    transition: none;
+  }
+
+  .paperStage,
+  .light {
+    will-change: auto;
+  }
 }
