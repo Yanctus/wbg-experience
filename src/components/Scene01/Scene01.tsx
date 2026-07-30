@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Scene02 } from '../Scene02/Scene02'
+import { probeAssets } from '../Scene02/assets'
+import type { Scene02AssetKey } from '../Scene02/assets'
 import { useScene01Animation } from '../../hooks/useScene01Animation'
 import styles from './Scene01.module.css'
 
@@ -23,6 +25,8 @@ const ASSET_LIST = Object.values(ASSETS)
 /** Hard ceiling for the loading state so a failing asset can never trap the page. */
 const LOADER_TIMEOUT_MS = 6000
 
+const NO_SCENE_02: ReadonlyMap<Scene02AssetKey, string> = new Map()
+
 const NATURAL_WIDTH = 1536
 const NATURAL_HEIGHT = 1024
 
@@ -31,17 +35,32 @@ export function Scene01() {
 
   const [loaded, setLoaded] = useState(0)
   const [ready, setReady] = useState(false)
+  const [scene02Assets, setScene02Assets] = useState<ReadonlyMap<Scene02AssetKey, string>>(NO_SCENE_02)
 
   useEffect(() => {
     let cancelled = false
     let settled = 0
+    let probed = false
 
+    /*
+     * The scene is only handed to the animation once scene 02's layers can be
+     * mounted in the same commit: the timeline collects its targets by selector
+     * as it is built, so a layer that appears one render later is missing from
+     * it for good, and the building never grows out of the plan.
+     */
     const settle = () => {
       settled += 1
       if (cancelled) return
       setLoaded(settled)
-      if (settled >= ASSET_LIST.length) setReady(true)
+      if (settled >= ASSET_LIST.length && probed) setReady(true)
     }
+
+    probeAssets().then((found) => {
+      if (cancelled) return
+      probed = true
+      setScene02Assets(found)
+      if (settled >= ASSET_LIST.length) setReady(true)
+    })
 
     // Resolve on error as well: a missing asset must not block the scene.
     ASSET_LIST.forEach((src) => {
@@ -61,7 +80,10 @@ export function Scene01() {
     }
   }, [])
 
-  useScene01Animation(rootRef, ready)
+  /* Stable key for the mounted scene 02 layers — see useScene01Animation. */
+  const scene02Key = [...scene02Assets.keys()].sort().join(',')
+
+  useScene01Animation(rootRef, ready, scene02Key)
 
   const progress = Math.round((loaded / ASSET_LIST.length) * 100)
 
@@ -167,24 +189,6 @@ export function Scene01() {
                         <span className={styles.planProbe} data-scene-plan-right />
                       </div>
 
-                      {/*
-                        Scene 02's wall emphasis. It lives here, as a sibling of
-                        the plan inside the camera, because it has to stay
-                        pixel-registered with the plan through the dive's
-                        rotation and 2.25x scale — the same asset, the same box,
-                        the same rotation, so registration is structural rather
-                        than something that has to be kept in sync.
-                      */}
-                      <div className={styles.wallGlow} data-scene-wall-glow>
-                        <img
-                          src={ASSETS.blueprint}
-                          alt=""
-                          width={NATURAL_WIDTH}
-                          height={NATURAL_HEIGHT}
-                          decoding="async"
-                        />
-                        <span className={styles.wallGlowTint} />
-                      </div>
                     </div>
                       </div>
                     </div>
@@ -251,7 +255,7 @@ export function Scene01() {
             </div>
 
             {/* 6 — scene 02 grows on the enlarged blueprint */}
-            <Scene02 />
+            <Scene02 available={scene02Assets} />
 
             {/* 7 — warm light from the top left */}
             <div className={styles.light} data-scene-light aria-hidden="true">

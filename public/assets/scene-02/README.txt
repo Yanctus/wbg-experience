@@ -7,9 +7,15 @@ Expected files in this folder:
   construction_lines_overlay.png  axes and annotations (not yet used)
   building_shadow_soft.png        contact shadow (not yet used)
 
-No configuration is needed. Each file is probed at runtime, so a layer
-appears as soon as its file is committed here and stays out of the DOM
-while it is missing — no flag to flip and no 404 in the console.
+No configuration is needed. Each file is probed at runtime by decoding it,
+so a layer appears as soon as its file is committed here and stays out of
+the DOM while it is missing — no flag to flip.
+
+building_wireframe.webp is a derivative, not a source: a 2048px re-encode
+of the PNG, about a twentieth of its size and indistinguishable at the size
+it is ever painted. It is preferred over the PNG when present, so if the
+PNG is replaced this file has to be regenerated from it (or deleted, in
+which case the PNG is used directly).
 
 Two notes for building_wireframe.png:
 

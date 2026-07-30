@@ -145,7 +145,20 @@ function readLength(styles: CSSStyleDeclaration, name: string, fallback: number)
   return Number.isFinite(value) ? value : fallback
 }
 
-export function useScene01Animation(rootRef: RefObject<HTMLElement | null>, enabled: boolean) {
+/**
+ * @param revision  Changes whenever the set of mounted scene 02 layers changes.
+ *                  The timeline collects its targets by selector while it is
+ *                  built, so a layer that mounts afterwards would never be part
+ *                  of it; bumping this rebuilds the choreography around what is
+ *                  actually in the DOM. Belt and braces next to the loader gate
+ *                  in Scene01 — the loader has a hard timeout, and without this
+ *                  a slow asset would time the building out of the sequence.
+ */
+export function useScene01Animation(
+  rootRef: RefObject<HTMLElement | null>,
+  enabled: boolean,
+  revision = '',
+) {
   useEffect(() => {
     const root = rootRef.current
     if (!root || !enabled) return
@@ -749,7 +762,6 @@ export function useScene01Animation(rootRef: RefObject<HTMLElement | null>, enab
           plan: blueprint,
           boardSurface: pick('[data-scene-board-surface]'),
           paper: pick('[data-scene-paper]'),
-          wallGlow: pick('[data-scene-wall-glow]'),
           planCentre: pick('[data-scene-plan-centre]'),
           planLeft: pick('[data-scene-plan-left]'),
           planRight: pick('[data-scene-plan-right]'),
@@ -821,5 +833,5 @@ export function useScene01Animation(rootRef: RefObject<HTMLElement | null>, enab
     return () => {
       mm.revert()
     }
-  }, [rootRef, enabled])
+  }, [rootRef, enabled, revision])
 }

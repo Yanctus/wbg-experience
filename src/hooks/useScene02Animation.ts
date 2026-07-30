@@ -26,7 +26,6 @@ export type Scene02Targets = {
   /** Flat surface that turns the paper into a presentation board. */
   boardSurface?: HTMLElement
   /** Blurred copy of the plan's heaviest ink, used to lift the walls. */
-  wallGlow?: HTMLElement
   /** The paper texture, held back as the board takes over. */
   paper?: HTMLElement
   /** Scene 01's typography, which the drawing back off re-exposes. */
@@ -95,11 +94,11 @@ const STAGES = [0.4, 0.49, 0.58, 0.75, 0.95]
 
 /** Windows for each stage, as fractions of scene 02: rise, then a short hold. */
 const STAGE_WINDOWS: Array<[number, number]> = [
-  [0.44, 0.55],
-  [0.57, 0.66],
-  [0.68, 0.76],
-  [0.78, 0.87],
-  [0.88, 0.96],
+  [0.36, 0.48],
+  [0.52, 0.62],
+  [0.64, 0.73],
+  [0.75, 0.85],
+  [0.87, 0.96],
 ]
 
 const reveal = (fraction: number) => `${(fraction * 100).toFixed(2)}%`
@@ -112,7 +111,7 @@ export function buildScene02Intro({
   compact,
   boardScale,
 }: BuildOptions) {
-  const { tilt, stage, plan, boardSurface, wallGlow, paper, building, content } = targets
+  const { tilt, stage, plan, boardSurface, paper, building, content } = targets
   const { wireframe, lines, solid, shadow } = targets
 
   /* Fractions of scene 02's own stretch, so the beats read as a storyboard. */
@@ -171,7 +170,6 @@ export function buildScene02Intro({
   if (revealTargets.length) gsap.set(revealTargets, { '--reveal': reveal(REVEAL_START) })
   if (bodyLayers.length) gsap.set(bodyLayers, { opacity: 0 })
   if (building) gsap.set(building, { yPercent: compact ? 1.2 : 1.8, scale: 0.988 })
-  if (wallGlow) gsap.set(wallGlow, { opacity: 0 })
   if (boardSurface) gsap.set(boardSurface, { opacity: 0 })
 
   /*
@@ -209,28 +207,16 @@ export function buildScene02Intro({
   }
 
   /*
-   * The plan's heaviest lines lift while it is still flat — the walls the
-   * building is about to stand on. Deliberately slight: emphasis, not an effect.
-   */
-  if (wallGlow) {
-    timeline.to(
-      wallGlow,
-      { opacity: compact ? 0.4 : 0.48, duration: span(0.14), ease: 'power2.out' },
-      at(0.05),
-    )
-  }
-
-  /*
-   * Phase 3 — 30 to 48 %: paper becomes presentation board. The flat surface
+   * Phase 3 — 26 to 44 %: paper becomes presentation board. The flat surface
    * fades in over the texture while the paper layer itself is held back, so
    * grain and blotches recede and the sheet reads as a museum board. The plan is
    * printed on top of it and is not touched here.
    */
   if (boardSurface) {
-    timeline.to(boardSurface, { opacity: 0.94, duration: span(0.18), ease: 'power1.inOut' }, at(0.3))
+    timeline.to(boardSurface, { opacity: 0.94, duration: span(0.18), ease: 'power1.inOut' }, at(0.26))
   }
   if (paper) {
-    timeline.to(paper, { opacity: 0.72, duration: span(0.18), ease: 'power1.inOut' }, at(0.3))
+    timeline.to(paper, { opacity: 0.72, duration: span(0.18), ease: 'power1.inOut' }, at(0.26))
   }
   /*
    * The surround is lifted towards the board's own tone at the same time. It
@@ -243,16 +229,11 @@ export function buildScene02Intro({
     timeline.to(
       stage,
       { backgroundColor: '#f4f1ec', duration: span(0.22), ease: 'power1.inOut' },
-      at(0.3),
+      at(0.26),
     )
   }
-  /* The wall emphasis belongs to the paper drawing, so it retires with it. */
-  if (wallGlow) {
-    timeline.to(wallGlow, { opacity: 0, duration: span(0.16), ease: 'power1.inOut' }, at(0.32))
-  }
-
   /*
-   * Phase 4 — 44 to 96 %: the building grows out of the plan, bottom to top.
+   * Phase 4 — 32 to 96 %: the building grows out of the plan, bottom to top.
    * Each stage rises to its own storey and is followed by a short hold, so the
    * walls read as built rather than extruded. The mask edge is feathered, so no
    * stage ever lands as a hard line.
@@ -262,7 +243,7 @@ export function buildScene02Intro({
     timeline.to(
       bodyLayers,
       { opacity: 1, duration: span(0.06), ease: 'power1.inOut', onUpdate: ensurePlaced },
-      at(0.4),
+      at(0.32),
     )
   }
 

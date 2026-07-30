@@ -81,8 +81,21 @@
   mix-blend-mode: multiply;
 }
 
+/*
+ * Two adjustments, and the second one is what makes the building readable at
+ * all. The brightness lift clips a near-white field to pure white, so it is a
+ * true no-op under multiply. The invert/brightness/invert sandwich then
+ * amplifies darkness rather than lightness — white stays white, and only the
+ * line work gets heavier.
+ *
+ * It is needed because the asset's line work is drawn very light (median
+ * luminance of its opaque pixels is 247/255) and is then drawn at roughly a
+ * fifth of its 4096px size, which averages every hairline further into the
+ * white around it. Without this the finished building is technically present
+ * and practically invisible.
+ */
 .layer img {
-  filter: brightness(1.035);
+  filter: brightness(1.035) invert(1) brightness(3.4) invert(1);
 }
 
 /*

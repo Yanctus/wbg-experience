@@ -9,25 +9,24 @@
  * Layers are mounted only once their file is actually present (see ./assets.ts),
  * so the sequence degrades to "plan only" rather than to broken images.
  */
-import { useEffect, useState } from 'react'
-import { EXPECTED_SIZE, SCENE_02_ASSETS, probeAssets } from './assets'
+import { EXPECTED_SIZE } from './assets'
 import type { Scene02AssetKey } from './assets'
 import styles from './Scene02.module.css'
 
-export function Scene02() {
-  const [available, setAvailable] = useState<Set<Scene02AssetKey>>(() => new Set())
+type Scene02Props = {
+  /**
+   * Which assets exist. Probed by the parent rather than here, and for a
+   * structural reason: the scroll animation looks these layers up by selector
+   * when it is built, so a layer that mounts later than the timeline simply is
+   * not in it — the building never appears and the whole construction half of
+   * the sequence silently does nothing. Probing upstream keeps mount and
+   * timeline build in the same commit.
+   */
+  available: ReadonlyMap<Scene02AssetKey, string>
+}
 
-  useEffect(() => {
-    let cancelled = false
-    probeAssets().then((found) => {
-      if (!cancelled) setAvailable(found)
-    })
-    return () => {
-      cancelled = true
-    }
-  }, [])
-
-  const has = (key: Scene02AssetKey) => available.has(key)
+export function Scene02({ available }: Scene02Props) {
+  const src = (key: Scene02AssetKey) => available.get(key)
 
   return (
     <div className={styles.scene} data-scene-02 aria-hidden="true">
@@ -38,10 +37,10 @@ export function Scene02() {
       */}
       <div className={styles.building} data-scene-02-building>
         {/* Contact shadow, grounding the building on the plan. */}
-        {has('shadow') && (
+        {src('shadow') && (
           <div className={styles.layer} data-scene-02-shadow>
             <img
-              src={SCENE_02_ASSETS.shadow}
+              src={src('shadow')}
               alt=""
               width={EXPECTED_SIZE.width}
               height={EXPECTED_SIZE.height}
@@ -51,10 +50,10 @@ export function Scene02() {
         )}
 
         {/* Solid massing — not part of this sequence yet, ready for the next. */}
-        {has('solid') && (
+        {src('solid') && (
           <div className={styles.layer} data-scene-02-solid>
             <img
-              src={SCENE_02_ASSETS.solid}
+              src={src('solid')}
               alt=""
               width={EXPECTED_SIZE.width}
               height={EXPECTED_SIZE.height}
@@ -68,10 +67,10 @@ export function Scene02() {
           soft-edged gradient driven by --reveal, so the storeys rise out of the
           plan behind a feathered edge instead of a hard clipping line.
         */}
-        {has('wireframe') && (
+        {src('wireframe') && (
           <div className={`${styles.layer} ${styles.reveal}`} data-scene-02-wireframe>
             <img
-              src={SCENE_02_ASSETS.wireframe}
+              src={src('wireframe')}
               alt=""
               width={EXPECTED_SIZE.width}
               height={EXPECTED_SIZE.height}
@@ -81,10 +80,10 @@ export function Scene02() {
         )}
 
         {/* Axes and annotations — ready for the next stage of the story. */}
-        {has('constructionLines') && (
+        {src('constructionLines') && (
           <div className={`${styles.layer} ${styles.reveal}`} data-scene-02-lines>
             <img
-              src={SCENE_02_ASSETS.constructionLines}
+              src={src('constructionLines')}
               alt=""
               width={EXPECTED_SIZE.width}
               height={EXPECTED_SIZE.height}

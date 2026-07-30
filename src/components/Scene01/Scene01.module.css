@@ -356,49 +356,6 @@
   );
 }
 
-/*
- * Scene 02's wall emphasis — the plan's structural walls lifted slightly before
- * the building grows out of them.
- *
- * No extra asset is needed: the plan's own ink separates cleanly by weight. The
- * walls are the darkest ink (luminance under 110) while the dimension lines and
- * annotations sit at 150 and above, so `contrast()` pivoting at mid-grey drops
- * the annotation to pure white and keeps only the walls. Blurring that gives the
- * halo, and the tint below turns it blueprint-blue.
- */
-.wallGlow {
-  position: absolute;
-  inset: 15% 17% 19% 16%;
-  rotate: 4.4deg;
-  opacity: 0;
-  mix-blend-mode: multiply;
-  /* Confines the tint below to this layer's own content. */
-  isolation: isolate;
-}
-
-.wallGlow img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  filter: contrast(8) blur(2.5px);
-}
-
-/*
- * `color` takes this blue's hue and saturation and keeps the mask's own
- * lightness, so the grey halo becomes a blue-grey halo and the white field stays
- * white. `lighten` is the obvious choice here and the wrong one: the walls are
- * only a couple of pixels wide once the plan is scaled down, so after the blur
- * the mask never gets darker than the tint, and lighten can only introduce
- * colour where the backdrop is darker than the source — the halo would come out
- * plain grey.
- */
-.wallGlowTint {
-  position: absolute;
-  inset: 0;
-  background-color: #6d82a6;
-  mix-blend-mode: color;
-}
-
 /* 5 — typography ------------------------------------------------------- */
 
 /*
