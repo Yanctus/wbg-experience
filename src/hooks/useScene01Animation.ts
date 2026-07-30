@@ -271,7 +271,16 @@ export function useScene01Animation(rootRef: RefObject<HTMLElement | null>, enab
         const { boxWidth } = measureAtRest()
         if (!boxWidth) return 1
         const width = diveScale() * boxWidth * SHEET_WIDTH_FRACTION
-        const target = window.innerWidth * (compact ? 1 : 0.92)
+        /*
+         * On a wide screen the board is pulled back inside the frame so its
+         * edges read. A phone cannot have both: the building is registered to
+         * the plan's printed footprint, so a board that fits a 390px width
+         * leaves the building barely a hundred pixels tall. The board is
+         * therefore allowed to bleed off the sides there, which keeps the
+         * drawing and the building legible — the tilt still shows its near and
+         * far edges, so it is still recognisably a board.
+         */
+        const target = window.innerWidth * (compact ? 2.3 : 0.92)
         return Math.min(1, target / width)
       }
 
@@ -524,7 +533,7 @@ export function useScene01Animation(rootRef: RefObject<HTMLElement | null>, enab
       const hold = { progress: 0 }
       master.to(hold, { progress: 1, duration: scene02Share }, scene01Share + diveShare)
 
-      buildScene02Intro({
+      const placeScene02Building = buildScene02Intro({
         timeline: master,
         position: scene01Share + diveShare,
         duration: scene02Share,
@@ -538,6 +547,9 @@ export function useScene01Animation(rootRef: RefObject<HTMLElement | null>, enab
           boardSurface: pick('[data-scene-board-surface]'),
           paper: pick('[data-scene-paper]'),
           wallGlow: pick('[data-scene-wall-glow]'),
+          planCentre: pick('[data-scene-plan-centre]'),
+          planLeft: pick('[data-scene-plan-left]'),
+          planRight: pick('[data-scene-plan-right]'),
           building: pick('[data-scene-02-building]'),
           wireframe: pick('[data-scene-02-wireframe]'),
           lines: pick('[data-scene-02-lines]'),
@@ -546,6 +558,18 @@ export function useScene01Animation(rootRef: RefObject<HTMLElement | null>, enab
         },
       })
 
+      /*
+       * The building is seated on the plan by measurement, so a layout change
+       * has to invalidate that seat. Whether it can be re-measured straight away
+       * depends on where the reader is: the plan only projects to its final
+       * position once the board has finished tilting.
+       */
+      const reseatScene02Building = () => {
+        const settled = master.progress() > scene01Share + diveShare + scene02Share * 0.36
+        placeScene02Building(settled)
+      }
+      ScrollTrigger.addEventListener('refresh', reseatScene02Building)
+
       /* --------------------------------------------- mouse parallax */
 
       /*
@@ -553,7 +577,11 @@ export function useScene01Animation(rootRef: RefObject<HTMLElement | null>, enab
        * condition is part of matchMedia, so a resize rebuilds instead of
        * leaving a stale listener behind.
        */
-      if (!canParallax) return
+      if (!canParallax) {
+        return () => {
+          ScrollTrigger.removeEventListener('refresh', reseatScene02Building)
+        }
+      }
 
       const targets = [
         { el: paperParallax, range: MOUSE_RANGE.paper, duration: 0.8 },
@@ -583,6 +611,7 @@ export function useScene01Animation(rootRef: RefObject<HTMLElement | null>, enab
 
       return () => {
         window.removeEventListener('pointermove', handlePointerMove)
+        ScrollTrigger.removeEventListener('refresh', reseatScene02Building)
       }
     })
 

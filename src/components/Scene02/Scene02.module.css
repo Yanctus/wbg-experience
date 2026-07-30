@@ -25,52 +25,41 @@
   mix-blend-mode: multiply;
 }
 
-/* The rise-and-grow target — one transform for every layer at once. */
+/*
+ * The rise-and-grow target, and the seat for the whole building.
+ *
+ * Position and size come from the plan itself: the hook measures where the
+ * drawn outline's centre and its two side mid-points land on screen once the
+ * board is tilted, and writes them here. The fallbacks only matter for the
+ * first frame before that measurement runs.
+ */
 .building {
-  /*
-   * Where the building's own base line sits on screen, and how big it is drawn.
-   * The base is placed to coincide with the centre of the tilted presentation
-   * board, so the walls stand on the plan rather than floating over it.
-   */
-  --building-base: 71%;
-  /*
-   * The wireframe's own footprint-to-roof span is 62.4% of the asset height, and
-   * its base sits at --building-base, so the vh cap is what keeps the roof inside
-   * the viewport rather than clipped against the top edge.
-   */
-  --building-size: min(88vw, 72rem, 92vh);
-  /* Where the base line falls inside the asset, measured from its top edge.
-     The wireframe's own footprint starts at 24.7% of the image from the bottom. */
-  --building-base-in-asset: 75.3%;
-  /*
-   * The asset is not centred in its own frame — its footprint spans 12.9% to
-   * 96.3% across, so its centre sits 4.6% right of the image centre. Cancelling
-   * that here is what puts the building's footprint over the plan's, rather than
-   * off to one side of it.
-   */
-  --building-offset-x: 4.6%;
+  --plan-x: 50%;
+  --plan-y: 63%;
+  --building-size: min(70vw, 60rem);
+  /* Where the wireframe's own ground outline is centred inside its image. */
+  --footprint-x: 54.59%;
+  --footprint-y: 54.42%;
 
   position: absolute;
   inset: 0;
-  will-change: transform;
 }
 
 /*
- * Each layer is exactly the asset's box, not the viewport: the reveal mask below
- * is expressed in fractions of the *image*, so the mask and the box have to be
- * the same rectangle. Anchoring `top` at the base line and pulling back by the
- * base's position inside the asset puts the building's footprint precisely on
- * the board, at any viewport size.
+ * Each layer is exactly the asset's box, not the viewport: the reveal mask is
+ * expressed in fractions of the *image*, so the mask and the box have to be the
+ * same rectangle. Pinning the asset's own footprint centre onto the measured
+ * plan centre is what stands the walls on the printed drawing.
  */
 .layer {
   position: absolute;
-  left: 50%;
-  top: var(--building-base);
+  left: var(--plan-x);
+  top: var(--plan-y);
   width: var(--building-size);
   aspect-ratio: 1;
   transform: translate(
-    calc(-50% - var(--building-offset-x)),
-    calc(var(--building-base-in-asset) * -1)
+    calc(var(--footprint-x) * -1),
+    calc(var(--footprint-y) * -1)
   );
 }
 
@@ -118,11 +107,6 @@
 }
 
 @media (max-width: 720px) {
-  .building {
-    --building-base: 68%;
-    --building-size: min(96vw, 84vh);
-  }
-
   /* A slightly wider feather reads better at small sizes. */
   .reveal {
     --reveal-feather: 7%;

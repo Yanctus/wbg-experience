@@ -153,6 +153,18 @@ export function Scene01() {
                           height={NATURAL_HEIGHT}
                           decoding="async"
                         />
+
+                        {/*
+                          Probes marking the drawn building's outline, living in
+                          the plan's own coordinate space. Scene 02 measures where
+                          these three points land on screen once the board is
+                          tilted, and places the wireframe on them — so the walls
+                          stand on the printed footprint at any viewport, and the
+                          browser does the perspective maths for us.
+                        */}
+                        <span className={styles.planProbe} data-scene-plan-centre />
+                        <span className={styles.planProbe} data-scene-plan-left />
+                        <span className={styles.planProbe} data-scene-plan-right />
                       </div>
 
                       {/*

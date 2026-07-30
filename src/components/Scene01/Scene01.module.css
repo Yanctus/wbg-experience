@@ -308,6 +308,34 @@
   mix-blend-mode: multiply;
 }
 
+/*
+ * Zero-size markers on the drawn building's outline, read off blueprint_master
+ * itself: its walls span 0.245–0.745 across and 0.215–0.785 down the image. The
+ * image is letterboxed by 0.75% inside this element (its 1.5 aspect against the
+ * element's 1.523), which the horizontal figures below already account for.
+ */
+.planProbe {
+  position: absolute;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+[data-scene-plan-centre] {
+  left: 49.51%;
+  top: 50%;
+}
+
+[data-scene-plan-left] {
+  left: 24.88%;
+  top: 50%;
+}
+
+[data-scene-plan-right] {
+  left: 74.14%;
+  top: 50%;
+}
+
 .blueprint img {
   width: 100%;
   height: 100%;

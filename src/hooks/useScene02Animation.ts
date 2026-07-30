@@ -31,6 +31,10 @@ export type Scene02Targets = {
   paper?: HTMLElement
   /** Scene 01's typography, which the drawing back off re-exposes. */
   content?: HTMLElement
+  /** Probes on the drawn building's outline, in the plan's own space. */
+  planCentre?: HTMLElement
+  planLeft?: HTMLElement
+  planRight?: HTMLElement
   /** Shared transform target for every building layer. */
   building?: HTMLElement
   wireframe?: HTMLElement
@@ -77,6 +81,16 @@ const BOARD_SETTLE_Y_COMPACT = 6
  * numbers that need revisiting.
  */
 const REVEAL_START = 0.24
+
+/**
+ * The wireframe's own footprint, measured from the asset's alpha channel: its
+ * ground outline spans 83.01% of the image width, and — by the parallelogram
+ * rule on the two extreme bottom corners — its centre sits at (54.59%, 54.42%).
+ *
+ * Registering *that* point onto the plan's outline is what makes the walls stand
+ * on the drawing instead of hovering at some fixed height above it.
+ */
+const FOOTPRINT = { centreX: 0.5459, centreY: 0.5442, width: 0.8301 }
 const STAGES = [0.4, 0.49, 0.58, 0.75, 0.95]
 
 /** Windows for each stage, as fractions of scene 02: rise, then a short hold. */
@@ -111,6 +125,46 @@ export function buildScene02Intro({
 
   const settleY = compact ? BOARD_SETTLE_Y_COMPACT : BOARD_SETTLE_Y
   const tiltAngle = compact ? BOARD_TILT_COMPACT : BOARD_TILT
+
+  /*
+   * Puts the wireframe on the plan's printed footprint.
+   *
+   * The three probes live inside the plan, so their screen positions *are* the
+   * footprint's perspective projection — the browser has already done that
+   * maths, homography and all.
+   *
+   * Deliberately a plain measurement with nothing forced: it is called from the
+   * timeline at the point where the board is already sitting in its finished
+   * pose. Measuring earlier, or forcing a pose to measure it, reads the plan
+   * before the dive's camera has been applied and lands the building on the
+   * small scene 01 sheet instead.
+   */
+  const place = () => {
+    const { planCentre, planLeft, planRight } = targets
+    if (!building || !planCentre || !planLeft || !planRight) return
+
+    const centre = planCentre.getBoundingClientRect()
+    const left = planLeft.getBoundingClientRect()
+    const right = planRight.getBoundingClientRect()
+
+    const planWidth = Math.hypot(right.left - left.left, right.top - left.top)
+    if (!planWidth) return
+
+    building.style.setProperty('--plan-x', `${centre.left.toFixed(2)}px`)
+    building.style.setProperty('--plan-y', `${centre.top.toFixed(2)}px`)
+    building.style.setProperty('--building-size', `${(planWidth / FOOTPRINT.width).toFixed(2)}px`)
+  }
+
+  /*
+   * Measured once per layout rather than per frame — three rect reads force a
+   * synchronous layout, which is not something to do on every scroll tick.
+   */
+  let needsPlacement = true
+  const ensurePlaced = () => {
+    if (!needsPlacement) return
+    place()
+    needsPlacement = false
+  }
 
   /* ------------------------------------------------- initial state */
 
@@ -204,7 +258,12 @@ export function buildScene02Intro({
    * stage ever lands as a hard line.
    */
   if (bodyLayers.length) {
-    timeline.to(bodyLayers, { opacity: 1, duration: span(0.06), ease: 'power1.inOut' }, at(0.4))
+    /* Seats the building on the footprint just before it becomes visible. */
+    timeline.to(
+      bodyLayers,
+      { opacity: 1, duration: span(0.06), ease: 'power1.inOut', onUpdate: ensurePlaced },
+      at(0.4),
+    )
   }
 
   if (hasBuilding) {
@@ -215,6 +274,11 @@ export function buildScene02Intro({
           '--reveal': reveal(STAGES[index]),
           duration: span(end - start),
           ease: 'power2.inOut',
+          /* Also here, not just on the fade-in: a reader who lands deep in the
+             page — a restored scroll position, a jump — never renders a frame in
+             that earlier window, and would otherwise get an unplaced building.
+             The flag makes every call after the first a no-op. */
+          onUpdate: ensurePlaced,
         },
         at(start),
       )
@@ -258,5 +322,16 @@ export function buildScene02Intro({
       },
       at(0.42),
     )
+  }
+
+  /*
+   * Handed back so the caller can invalidate the placement on a refresh. The
+   * board's pose is already final by then if the reader is past the tilt, so it
+   * re-measures immediately; otherwise it waits for the timeline to reach the
+   * point where measuring is meaningful.
+   */
+  return (boardIsSettled: boolean) => {
+    needsPlacement = true
+    if (boardIsSettled) ensurePlaced()
   }
 }
