@@ -1,18 +1,35 @@
 /*
- * Scene 02 — layers sit on the enlarged blueprint, above the sheet (z 5) and
- * below the atmospheric overlays (light/grain/dust, z 7–9), so the building
- * still picks up the scene's light and grain.
+ * Scene 02 — the building rising out of the fullscreen floor plan.
  *
- * The layers are centred on the viewport rather than on the sheet: by the time
- * scene 02 starts, the sheet fills the screen, so the viewport centre and the
- * blueprint centre are the same point.
+ * Sits above the sheet (z 5) and below the atmospheric overlays (light, grain,
+ * dust — z 7 to 9), so the building picks up the same light and paper grain as
+ * everything else and reads as part of the drawing rather than pasted onto it.
  */
 
+/*
+ * The blend has to sit here as well as on the individual layers, and the reason
+ * is structural: .building carries a transform, which makes it a stacking
+ * context, so a mix-blend-mode further inside can only blend against .building's
+ * own (empty) backdrop — never against the plan. The white field of the
+ * wireframe would then be painted as opaque white and blank the drawing out.
+ *
+ * multiply is associative, so this composes correctly: the layers multiply with
+ * each other inside .building, and this element multiplies that result onto the
+ * plan, where white is a no-op and only the line work darkens.
+ */
 .scene {
   position: absolute;
   inset: 0;
   z-index: 6;
   pointer-events: none;
+  mix-blend-mode: multiply;
+}
+
+/* The rise-and-grow target — one transform for every layer at once. */
+.building {
+  position: absolute;
+  inset: 0;
+  will-change: transform;
 }
 
 .layer {
@@ -24,38 +41,75 @@
 }
 
 /*
- * The building is drawn at its natural scale, capped so it keeps a margin to
- * the viewport edges on any display. `contain` means a taller asset than
- * expected still fits rather than cropping.
+ * The building is drawn at its natural scale, capped so it always keeps a
+ * margin to the viewport edges. `contain` means an asset with different
+ * proportions than expected still fits rather than cropping.
  */
 .layer img {
-  width: min(74vw, 60rem);
-  max-height: 76vh;
+  width: min(82vw, 68rem);
+  max-height: 84vh;
   height: auto;
   object-fit: contain;
 }
 
 /*
- * multiply on the layer, not on the image: these sit over the blueprint, and
- * the upcoming PNGs are expected to have the same near-white field as the
- * scene 01 assets. If they ship with a real alpha channel, drop the blend and
- * the filter here.
+ * multiply, not plain compositing: the scene 01 assets all shipped with a
+ * near-white field instead of an alpha channel, so this is what lets a
+ * white-backed wireframe read as transparent line work over the plan. It is
+ * equally correct for a PNG that does carry real alpha, so the layer works
+ * either way. The brightness lift clips a near-white field to pure white first,
+ * which is what makes it a true no-op under multiply.
  */
-.scene [data-scene-02-shadow],
-.scene [data-scene-02-wireframe],
-.scene [data-scene-02-lines] {
+.layer {
   mix-blend-mode: multiply;
 }
 
-.scene [data-scene-02-shadow] img,
-.scene [data-scene-02-wireframe] img,
-.scene [data-scene-02-lines] img {
+.layer img {
   filter: brightness(1.035);
+}
+
+/*
+ * Bottom-to-top reveal. The mask is solid up to --reveal and then feathers out
+ * over a short band, so the construction edge is soft rather than a hard line
+ * sweeping up the facade. GSAP animates --reveal; 0% hides everything.
+ */
+.reveal {
+  --reveal: 0%;
+  --reveal-feather: 5%;
+
+  -webkit-mask-image: linear-gradient(
+    to top,
+    #000 var(--reveal),
+    transparent calc(var(--reveal) + var(--reveal-feather))
+  );
+  mask-image: linear-gradient(
+    to top,
+    #000 var(--reveal),
+    transparent calc(var(--reveal) + var(--reveal-feather))
+  );
 }
 
 @media (max-width: 720px) {
   .layer img {
-    width: 88vw;
-    max-height: 58vh;
+    width: 94vw;
+    max-height: 62vh;
+  }
+
+  /* A slightly wider feather reads better at small sizes. */
+  .reveal {
+    --reveal-feather: 7%;
+  }
+}
+
+/*
+ * Reduced motion: scene 01 is shown at rest on its desk and there is no dive,
+ * so there is no enlarged plan for the building to be standing on. Placing a
+ * fullscreen building over a sheet lying on a desk would read as a mistake, so
+ * the sequence sits this variant out. Nothing is lost: these layers are
+ * decorative (aria-hidden) and carry no information of their own.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .scene {
+    display: none;
   }
 }

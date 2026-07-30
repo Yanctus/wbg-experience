@@ -136,6 +136,25 @@ export function Scene01() {
                           decoding="async"
                         />
                       </div>
+
+                      {/*
+                        Scene 02's wall emphasis. It lives here, as a sibling of
+                        the plan inside the camera, because it has to stay
+                        pixel-registered with the plan through the dive's
+                        rotation and 2.25x scale — the same asset, the same box,
+                        the same rotation, so registration is structural rather
+                        than something that has to be kept in sync.
+                      */}
+                      <div className={styles.wallGlow} data-scene-wall-glow>
+                        <img
+                          src={ASSETS.blueprint}
+                          alt=""
+                          width={NATURAL_WIDTH}
+                          height={NATURAL_HEIGHT}
+                          decoding="async"
+                        />
+                        <span className={styles.wallGlowTint} />
+                      </div>
                     </div>
                   </div>
                 </div>

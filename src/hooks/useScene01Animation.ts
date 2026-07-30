@@ -510,11 +510,15 @@ export function useScene01Animation(rootRef: RefObject<HTMLElement | null>, enab
         timeline: master,
         position: scene01Share + diveShare,
         duration: scene02Share,
+        compact,
         targets: {
-          shadow: pick('[data-scene-02-shadow]'),
-          solid: pick('[data-scene-02-solid]'),
+          plan: blueprint,
+          wallGlow: pick('[data-scene-wall-glow]'),
+          building: pick('[data-scene-02-building]'),
           wireframe: pick('[data-scene-02-wireframe]'),
           lines: pick('[data-scene-02-lines]'),
+          solid: pick('[data-scene-02-solid]'),
+          shadow: pick('[data-scene-02-shadow]'),
         },
       })
 
