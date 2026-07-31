@@ -1,9 +1,9 @@
-import { Scene01 } from './components/Scene01/Scene01'
+import { StoryExperience } from './components/StoryExperience/StoryExperience'
 
 export default function App() {
   return (
     <main>
-      <Scene01 />
+      <StoryExperience />
     </main>
   )
 }

@@ -1,0 +1,98 @@
+/*
+ * Scene 02 — the building on the plan.
+ *
+ * Sits above the sheet (z 5) and below the atmosphere (z 7+), so it picks up
+ * the same light and grain as everything else and reads as part of the world
+ * rather than pasted onto it.
+ */
+.scene {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  pointer-events: none;
+}
+
+/*
+ * Seat for the whole building, and the single target for the slow lift that
+ * makes it look like it is rising out of the board. Position and size come
+ * from the plan — the fallbacks only cover the first frame before the
+ * measurement runs.
+ */
+.building {
+  --plan-x: 50%;
+  --plan-y: 60%;
+  --size: min(70vw, 60rem);
+  /* Where the master's own ground outline sits inside its image. */
+  --footprint-x: 54.59%;
+  --footprint-y: 54.42%;
+
+  position: absolute;
+  inset: 0;
+}
+
+/*
+ * Each layer is exactly the asset's box, not the viewport: the reveal mask is
+ * expressed in fractions of the *image*, so mask and box have to be the same
+ * rectangle. Pinning the asset's footprint centre onto the measured plan
+ * centre is what stands the walls on the printed drawing.
+ */
+.ground {
+  position: absolute;
+  left: var(--plan-x);
+  top: var(--plan-y);
+  width: calc(var(--size) * 0.82);
+  height: calc(var(--size) * 0.26);
+  transform: translate(-50%, -14%);
+  opacity: 0;
+  background: radial-gradient(
+    closest-side,
+    rgb(66 58 46 / 24%) 0%,
+    rgb(66 58 46 / 10%) 48%,
+    rgb(66 58 46 / 0%) 100%
+  );
+  filter: blur(12px);
+}
+
+.layer {
+  position: absolute;
+  left: var(--plan-x);
+  top: var(--plan-y);
+  width: var(--size);
+  aspect-ratio: 1;
+  transform: translate(calc(var(--footprint-x) * -1), calc(var(--footprint-y) * -1));
+  opacity: 0;
+}
+
+.layer img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/*
+ * Bottom-to-top construction. Solid up to --reveal, then feathered over a
+ * short band, so each storey arrives behind a soft edge instead of a hard line
+ * sweeping up the facade.
+ */
+.rise {
+  --reveal: 0%;
+  --feather: 5%;
+
+  -webkit-mask-image: linear-gradient(
+    to top,
+    #000 var(--reveal),
+    transparent calc(var(--reveal) + var(--feather))
+  );
+  mask-image: linear-gradient(
+    to top,
+    #000 var(--reveal),
+    transparent calc(var(--reveal) + var(--feather))
+  );
+}
+
+@media (max-width: 720px) {
+  /* A wider feather reads better at small sizes. */
+  .rise {
+    --feather: 7%;
+  }
+}

@@ -1,0 +1,47 @@
+.static {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .static {
+    display: block;
+    padding: clamp(3rem, 10vh, 7rem) var(--gutter) clamp(4rem, 12vh, 9rem);
+    background-color: var(--gallery);
+  }
+
+  .figure {
+    margin: 0 auto clamp(2rem, 6vh, 4rem);
+    max-width: min(38rem, 80vw);
+  }
+
+  .figure img {
+    width: 100%;
+    height: auto;
+  }
+
+  .title {
+    margin: 0 auto 1.2rem;
+    max-width: 24ch;
+    font-family: var(--font);
+    font-size: var(--title);
+    font-weight: 500;
+    line-height: 1.18;
+    letter-spacing: -0.015em;
+    color: var(--ink);
+    text-align: center;
+  }
+
+  .title + .title {
+    margin-top: clamp(2.5rem, 7vh, 4.5rem);
+  }
+
+  .body {
+    margin: 0 auto;
+    max-width: 44ch;
+    font-family: var(--font);
+    font-size: var(--body);
+    line-height: 1.7;
+    color: var(--ink-soft);
+    text-align: center;
+  }
+}
