@@ -6,9 +6,9 @@ import type { ActOptions, StoryTargets } from './storyTargets'
  * Act 2 — entering the drawing, laying the board down, and building on it.
  *
  * Nothing here cuts. The camera keeps moving from act 1's sheet all the way
- * into the finished white model, because it is one timeline on one stage: the
- * sheet grows until it *is* the world, then the same sheet tilts back into a
- * presentation board and the building rises off it.
+ * into the finished walls, because it is one timeline on one stage: the sheet
+ * grows until it *is* the world, then the same sheet tilts back into a
+ * presentation board and the apartment stands up out of its own drawing.
  */
 
 /** Presentation angle of the board, in degrees. */
@@ -21,22 +21,16 @@ const SETTLE_Y = 13
  * headroom the roof gets — at the desktop's settle the top storeys would be
  * outside the viewport.
  */
-const SETTLE_Y_COMPACT = 16
+const SETTLE_Y_COMPACT = 8
 
-/** Height the wireframe is masked to when the first storey appears. */
-const REVEAL_START = 0.24
-/** Mask heights the construction stops at, as fractions of the image. */
-const STAGES = [0.4, 0.49, 0.58, 0.75, 0.95]
-/** When each stage runs, as fractions of the construction act. */
-const STAGE_WINDOWS: Array<[number, number]> = [
-  [0.42, 0.52],
-  [0.54, 0.62],
-  [0.64, 0.71],
-  [0.73, 0.8],
-  [0.82, 0.89],
-]
+/**
+ * Finished wall height, as a translateZ step per copy in the plan's own pixel
+ * space. Every ancestor scale multiplies it, so this is a small number: the
+ * board is roughly five times its layout size by the time the walls grow.
+ */
+const WALL_RISE = 0.86
+const WALL_RISE_COMPACT = 0.62
 
-const pct = (fraction: number) => `${(fraction * 100).toFixed(2)}%`
 
 /**
  * Measures the sheet at rest, with GSAP's own transforms cleared, so the camera
@@ -69,7 +63,7 @@ function measureAtRest(camera: HTMLElement, lift?: HTMLElement) {
  * before the camera has been applied and lands the building on the small sheet.
  */
 function placeOnFootprint(targets: StoryTargets) {
-  const { planCentre, planLeft, planRight, building, realAnchor } = targets
+  const { planCentre, planLeft, planRight, realAnchor } = targets
   if (!planCentre || !planLeft || !planRight) return
 
   const centre = planCentre.getBoundingClientRect()
@@ -79,7 +73,7 @@ function placeOnFootprint(targets: StoryTargets) {
   const planWidth = Math.hypot(right.left - left.left, right.top - left.top)
   if (!planWidth) return
 
-  for (const seat of [building, realAnchor]) {
+  for (const seat of [realAnchor]) {
     if (!seat) continue
     seat.style.setProperty('--plan-x', `${centre.left.toFixed(2)}px`)
     seat.style.setProperty('--plan-y', `${centre.top.toFixed(2)}px`)
@@ -173,33 +167,22 @@ export function buildConstructionAct({
   targets,
   compact,
 }: ActOptions) {
-  const { tilt, stage, sheet, board, plan, planLayers, building, wireframe, white, act2 } = targets
+  const { tilt, stage, sheet, board, plan, planLayers, walls, act2 } = targets
 
   const at = (fraction: number) => position + fraction * duration
   const span = (fraction: number) => fraction * duration
 
-  const rise = [wireframe, white].filter(Boolean) as HTMLElement[]
-  const hasBuilding = rise.length > 0
+  const hasWalls = Boolean(walls)
 
   /* ------------------------------------------------------ initial state */
 
-  if (rise.length) gsap.set(rise, { '--reveal': pct(REVEAL_START), opacity: 0 })
-  if (white) gsap.set(white, { opacity: 0 })
-  if (building) gsap.set(building, { yPercent: compact ? 1.2 : 1.8, scale: 0.988 })
-  if (board) gsap.set(board, { opacity: 0 })
-
   /*
-   * Measured once per layout rather than per frame — three rect reads force a
-   * synchronous layout, which is not something to do on every scroll tick. It
-   * runs from the tweens that need it, so a reader who lands deep in the page
-   * still gets a placed building.
+   * Flat *and* invisible to start with. At zero height the stack is a solid
+   * white wall footprint lying on the drawing, which would hide the very lines
+   * it is about to stand on.
    */
-  let needsPlacement = true
-  const ensurePlaced = () => {
-    if (!needsPlacement) return
-    placeOnFootprint(targets)
-    needsPlacement = false
-  }
+  if (walls) gsap.set(walls, { '--rise': '0px', opacity: 0 })
+  if (board) gsap.set(board, { opacity: 0 })
 
   /* --- the board lies down ------------------------------------------- */
 
@@ -213,16 +196,15 @@ export function buildConstructionAct({
           /*
            * How much of the frame the settled board takes. The dive has already
            * grown the sheet past the viewport, so this pulls it back: enough
-           * that the plan still reads, little enough that the building standing
-           * on it keeps its roof and its base inside the frame. Narrow screens
-           * need to pull back hardest — the building is tall and the plan is
-           * wide, and only one of them can win.
+           * that the plan still reads, little enough that the walls standing on
+           * it stay inside the frame.
+           *
+           * offsetWidth, not the client rect: the layout box is what the scale
+           * is relative to, and a rect would already include this very scale on
+           * a refresh and feed back on itself.
            */
           const vw = window.innerWidth
-          const share = compact ? 0.62 : vw <= 1024 ? 0.76 : 0.92
-          /* offsetWidth, not the client rect: the layout box is what the scale
-             is relative to, and a rect would already include this very scale on
-             a refresh and feed back on itself. */
+          const share = compact ? 0.44 : vw <= 1024 ? 0.7 : 0.92
           return (vw * share) / (tilt.offsetWidth || vw)
         },
         duration: span(0.3),
@@ -243,8 +225,7 @@ export function buildConstructionAct({
   /*
    * The surround is lifted to the board's own tone at the same time. It turns
    * the desk into gallery light, and it also stops the board's far edge from
-   * cutting a seam across the building: the wireframe is transparent, so
-   * wherever it crosses that edge the backdrop shows through it.
+   * cutting a seam across the building.
    */
   if (stage) {
     timeline.to(
@@ -254,54 +235,25 @@ export function buildConstructionAct({
     )
   }
 
-  /* --- the building rises --------------------------------------------- */
+  /* --- the walls rise -------------------------------------------------- */
 
-  if (hasBuilding) {
-    /* Seats it on the footprint in the frame before it becomes visible. */
+  /*
+   * One continuous growth rather than storey-by-storey steps: this is a single
+   * apartment, not a block, and the reference builds it in one calm move. The
+   * ease does the staging — slow to start, so the first millimetres off the
+   * paper are readable, then settling into the finished height.
+   */
+  if (walls) {
+    timeline.to(walls, { opacity: 1, duration: span(0.06), ease: 'power1.out' }, at(0.38))
     timeline.to(
-      wireframe as HTMLElement,
-      { opacity: 1, duration: span(0.05), ease: 'power1.inOut', onUpdate: ensurePlaced },
-      at(0.36),
+      walls,
+      {
+        '--rise': () => `${compact ? WALL_RISE_COMPACT : WALL_RISE}px`,
+        duration: span(0.42),
+        ease: 'power2.inOut',
+      },
+      at(0.38),
     )
-
-    STAGE_WINDOWS.forEach(([start, end], index) => {
-      timeline.to(
-        rise,
-        {
-          '--reveal': pct(STAGES[index]),
-          duration: span(end - start),
-          ease: 'power2.inOut',
-          onUpdate: ensurePlaced,
-        },
-        at(start),
-      )
-    })
-
-    /*
-     * The white model takes over from the line drawing. Both are masked to the
-     * same height at every moment, so the surfaces arrive exactly where the
-     * lines were — the model fills in rather than replacing anything.
-     */
-    if (white) {
-      timeline.to(white, { opacity: 1, duration: span(0.12), ease: 'power1.inOut' }, at(0.84))
-    }
-    if (wireframe) {
-      timeline.to(wireframe, { opacity: 0.28, duration: span(0.12), ease: 'power1.inOut' }, at(0.88))
-    }
-
-    /* A slow lift across the whole build, so it rises rather than unmasks. */
-    if (building) {
-      timeline.to(
-        building,
-        {
-          yPercent: compact ? -0.9 : -1.5,
-          scale: 1.016,
-          duration: span(0.55),
-          ease: 'power1.inOut',
-        },
-        at(0.38),
-      )
-    }
   }
 
   /*
@@ -310,7 +262,7 @@ export function buildConstructionAct({
    * stops looking like it came out of this plan. The structural footprint is
    * held back longest, because that is what the walls stand on.
    */
-  if (plan && hasBuilding) {
+  if (plan && hasWalls) {
     const secondary = planLayers.slice(1)
     if (secondary.length) {
       timeline.to(secondary, { opacity: 0.4, duration: span(0.22), ease: 'power1.inOut' }, at(0.44))
@@ -320,7 +272,7 @@ export function buildConstructionAct({
     timeline.to(plan, { opacity: 0.12, duration: span(0.14), ease: 'power2.inOut' }, at(0.86))
   }
 
-  /* The headline arrives only as the white model completes. */
+  /* The headline arrives only as the walls reach their height. */
   if (act2) {
     timeline.fromTo(
       act2,
@@ -330,9 +282,13 @@ export function buildConstructionAct({
     )
   }
 
-  /* Handed back so a refresh can re-measure once the board is settled. */
+  /*
+   * Handed back so a refresh can re-seat what still needs seating. The walls do
+   * not: they are masked ink inside the plan's own box, so they follow the
+   * board wherever it goes. Only scene 03's generated layers are placed by
+   * measurement, and only once the board has stopped moving.
+   */
   return (boardIsSettled: boolean) => {
-    needsPlacement = true
-    if (boardIsSettled) ensurePlaced()
+    if (boardIsSettled) placeOnFootprint(targets)
   }
 }

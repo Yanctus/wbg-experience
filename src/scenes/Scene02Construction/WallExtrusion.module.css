@@ -1,0 +1,49 @@
+/*
+ * The wall stack lives in the plan's own box and inherits the board's tilt, so
+ * translateZ points along the board's normal — straight up out of the paper.
+ * Its ancestors have to keep the 3D context alive (transform-style) for that,
+ * which is why .anchor, .camera and .lift are preserve-3d.
+ */
+.walls {
+  position: absolute;
+  inset: 15% 17% 19% 16%;
+  rotate: 4.4deg;
+  transform-style: preserve-3d;
+  pointer-events: none;
+
+  /* Height of one copy, in the plan's own pixels. GSAP animates it from 0. */
+  --rise: 0px;
+}
+
+.slab {
+  position: absolute;
+  inset: 0;
+  /*
+   * Warm white, shaded from the base upward: the lowest copies sit in their own
+   * shadow, the top catches the light. It is the only depth cue a stack of flat
+   * copies has, and without it the wall reads as a smear.
+   */
+  background-color: rgb(
+    calc(168 + var(--i) * 3.2) calc(163 + var(--i) * 3.3) calc(153 + var(--i) * 3.5)
+  );
+  -webkit-mask-image: url('/assets/derived/wall-body.webp');
+  mask-image: url('/assets/derived/wall-body.webp');
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  transform: translateZ(calc(var(--i) * var(--rise)));
+}
+
+.cap {
+  background-color: #fdfcfa;
+}
+
+/*
+ * The shadow the walls cast on the drawing. It sits on the board itself, at
+ * zero height, so it grounds the stack instead of floating with it. The blur
+ * flattens this one element, which is harmless: it has no height of its own.
+ */
+.shade {
+  background-color: rgb(74 66 54 / 34%);
+  filter: blur(3px);
+  transform: translate(1.5%, 1.6%);
+}

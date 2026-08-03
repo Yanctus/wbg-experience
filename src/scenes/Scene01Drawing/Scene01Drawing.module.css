@@ -41,7 +41,14 @@
   /* No will-change: promoting this to its own layer shifts it by a sub-pixel. */
 }
 
-/* The static pose. GSAP never writes to this element. */
+/*
+ * The static pose. GSAP never writes to this element.
+ *
+ * This wrapper and the two below keep the 3D context alive down to the wall
+ * stack: each carries a transform, and a transform on a flat element would
+ * flatten everything under it into the board's plane — the walls would then
+ * lie down on the drawing instead of standing on it.
+ */
 .anchor {
   position: absolute;
   top: 50%;
@@ -51,6 +58,7 @@
   aspect-ratio: 1536 / 1024;
   translate: 0 -50%;
   rotate: var(--paper-rotate);
+  transform-style: preserve-3d;
 }
 
 .camera {
@@ -58,11 +66,13 @@
   inset: 0;
   /* Matches the plan's own centre, so the dive grows *into* the drawing. */
   transform-origin: 49.5% 48%;
+  transform-style: preserve-3d;
 }
 
 .lift {
   position: absolute;
   inset: 0;
+  transform-style: preserve-3d;
 }
 
 /* Blend and opacity on the same element — see the shadow in the stage's CSS. */

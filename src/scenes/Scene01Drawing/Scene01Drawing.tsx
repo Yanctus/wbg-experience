@@ -1,4 +1,5 @@
 import { PAPER, PAPER_SIZE, PLAN_LAYERS } from '../../assets/manifest'
+import { WallExtrusion } from '../Scene02Construction/WallExtrusion'
 import styles from './Scene01Drawing.module.css'
 
 /**
@@ -75,6 +76,13 @@ export function Scene01Drawing() {
                 <span className={styles.probe} data-story-plan-left />
                 <span className={styles.probe} data-story-plan-right />
               </div>
+
+              {/*
+                The walls, in the plan's own box and inside the board's 3D
+                context, so they rise along the board's normal rather than
+                sliding across it.
+              */}
+              <WallExtrusion />
             </div>
           </div>
         </div>

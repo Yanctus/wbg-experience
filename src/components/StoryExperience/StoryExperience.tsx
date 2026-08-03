@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { CRITICAL, PAPER, PAPER_SIZE, probeOptional, type OptionalKey } from '../../assets/manifest'
 import { useStoryTimeline } from '../../hooks/useStoryTimeline'
 import { Scene01Drawing } from '../../scenes/Scene01Drawing/Scene01Drawing'
-import { Scene02Construction } from '../../scenes/Scene02Construction/Scene02Construction'
 import { Scene03Reality } from '../../scenes/Scene03Reality/Scene03Reality'
 import { Header } from '../Header/Header'
 import { ScrollIndicator } from '../ScrollIndicator/ScrollIndicator'
@@ -116,7 +115,6 @@ export function StoryExperience() {
             </div>
 
             <Scene01Drawing />
-            <Scene02Construction />
             <Scene03Reality available={optional} />
 
             {/* ------------------------------------------------ typography */}

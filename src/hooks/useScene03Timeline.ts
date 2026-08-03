@@ -17,10 +17,8 @@ export function buildRealityAct({ timeline, position, duration, targets, compact
   const {
     stage,
     tilt,
-    board,
     sheet,
     plan,
-    building,
     white,
     wireframe,
     photoreal,
@@ -77,9 +75,15 @@ export function buildRealityAct({ timeline, position, duration, targets, compact
       at(0.16),
     )
   }
-  for (const layer of [plan, board, sheet]) {
-    if (!layer) continue
-    timeline.to(layer, { opacity: 0, duration: span(0.24), ease: 'power1.inOut' }, at(0.2))
+  /*
+   * The drawing leaves, the board it was printed on stays. The walls stand on
+   * that board — fading it out as well would leave them hanging in the air.
+   */
+  if (plan) {
+    timeline.to(plan, { opacity: 0, duration: span(0.24), ease: 'power1.inOut' }, at(0.2))
+  }
+  if (sheet) {
+    timeline.to(sheet, { opacity: 0.4, duration: span(0.24), ease: 'power1.inOut' }, at(0.2))
   }
   if (backdrop) {
     timeline.to(backdrop, { opacity: 1, duration: span(0.3), ease: 'power1.inOut' }, at(0.18))
@@ -121,10 +125,15 @@ export function buildRealityAct({ timeline, position, duration, targets, compact
   if (backdrop) {
     timeline.to(backdrop, { scale: 1 + 0.04 * glide, duration: span(0.44), ease: 'power1.inOut' }, at(0.5))
   }
-  if (building) {
+  /*
+   * The board and everything standing on it move together — they are one
+   * object now, and scaling the walls apart from the surface they stand on
+   * would slide them off it.
+   */
+  if (tilt) {
     timeline.to(
-      building,
-      { scale: 1 + 0.08 * glide, yPercent: -11 * glide, duration: span(0.44), ease: 'power1.inOut' },
+      tilt,
+      { scale: `+=${0.1 * glide}`, yPercent: `-=${5 * glide}`, duration: span(0.44), ease: 'power1.inOut' },
       at(0.5),
     )
   }

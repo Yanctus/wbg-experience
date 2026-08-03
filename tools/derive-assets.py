@@ -37,6 +37,10 @@ ANY_INK_MAX = 240
 CLOSE = 55
 #: How far a wall may sit from open air and still count as an exterior wall.
 SKIN = 13
+#: Widest wall core to close when turning drawn walls into extrudable bodies.
+WALL_CLOSE = 21
+#: Smallest wall part worth keeping, in px — below this it is annotation.
+MIN_PART = 2000
 
 INK = (38, 34, 29)
 
@@ -92,6 +96,33 @@ def derive_plan() -> None:
     print(f'  staircase at x {xs.min()}-{xs.max()}, y {ys.min()}-{ys.max()}')
 
     any_ink = ink(lum, ANY_INK_MAX)
+
+    # Solid wall bodies for the extrusion.
+    #
+    # A drawn wall is two parallel lines with a hollow core, which extrudes into
+    # two thin ribbons rather than a wall. Closing across the core and filling
+    # what that encloses turns the drawing into a body. The kernel is sized to
+    # the widest wall core and no wider — larger and doorways start closing too.
+    #
+    # Everything is then clipped to the building and stripped of small parts, so
+    # dimension ticks and annotation fragments cannot rise out of the paper.
+    def body(mask: np.ndarray) -> np.ndarray:
+        filled = ndi.binary_fill_holes(ndi.binary_closing(mask, np.ones((WALL_CLOSE, WALL_CLOSE))))
+        filled &= ndi.binary_dilation(mask, np.ones((WALL_CLOSE + 6, WALL_CLOSE + 6)))
+        filled &= ndi.binary_dilation(inside, np.ones((18, 18)))
+        labels, count = ndi.label(filled)
+        if count:
+            keep = [i + 1 for i, n in enumerate(ndi.sum(filled, labels, range(1, count + 1)))
+                    if n >= MIN_PART]
+            filled = np.isin(labels, keep)
+        return filled
+
+    # One body, not two. Splitting exterior from interior works on strokes but
+    # not on bodies: the outer ring survives as dozens of slivers once it is
+    # intersected back with its own dilation, and the small-part filter then
+    # eats it. The construction stages the *height*, not the file.
+    print('wall body:')
+    save(body(wall).astype(float), 'wall-body', tint=(255, 255, 255))
 
     print('plan layers:')
     save(wall_ink * exterior, 'plan-1-footprint')

@@ -1,4 +1,4 @@
-import { BUILDING, BUILDING_SIZE } from '../../assets/manifest'
+import { PAPER_SIZE, PLAN_LAYERS } from '../../assets/manifest'
 import styles from './StaticStory.module.css'
 
 /**
@@ -14,14 +14,18 @@ export function StaticStory() {
   return (
     <section className={styles.static} aria-label="Die Geschichte in Kurzform">
       <figure className={styles.figure}>
-        <img
-          src={BUILDING.white}
-          alt="Architekturmodell des Wohngebäudes"
-          width={BUILDING_SIZE.width}
-          height={BUILDING_SIZE.height}
-          decoding="async"
-          loading="lazy"
-        />
+        {PLAN_LAYERS.map((layer) => (
+          <img
+            key={layer.key}
+            className={styles.planLayer}
+            src={layer.src}
+            alt={layer.key === 'footprint' ? 'Grundriss der Wohnung' : ''}
+            width={PAPER_SIZE.width}
+            height={PAPER_SIZE.height}
+            decoding="async"
+            loading="lazy"
+          />
+        ))}
       </figure>
 
       <h2 className={styles.title}>Aus einer Zeichnung entsteht Wirklichkeit.</h2>

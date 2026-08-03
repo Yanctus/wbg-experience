@@ -10,6 +10,7 @@ export type StoryTargets = {
   board?: HTMLElement
   plan?: HTMLElement
   planLayers: HTMLElement[]
+  walls?: HTMLElement
   planCentre?: HTMLElement
   planLeft?: HTMLElement
   planRight?: HTMLElement
