@@ -47,25 +47,27 @@ whole question.
 
 ## Prompt
 
+Matched to the four-stage reference: one apartment, cut open from above like a
+doll's house, built up in stages. Not the five-storey block — that is a
+different building and cannot come out of this plan.
+
 ```
 Locked-off top-down shot of a single sheet of premium architectural paper on a
 plain bright surface. The camera never moves.
 
-Very fine dark grey architectural lines draw themselves onto the paper,
-precisely and calmly, until a complete residential floor plan is finished: outer
-walls first, then interior walls, then the staircase. Brief pause on the
-finished drawing.
-
-Then the outer structural walls rise vertically out of the drawn plan, as thin
-clean white volumes standing exactly on the drawn lines. The remaining interior
-walls follow. Finally a flat white roof slab settles gently onto the walls,
-completing a clean white architectural massing model standing on the drawing.
+A complete residential floor plan is drawn on the paper in fine dark grey
+lines. The plan then builds itself upward in stages: first the outer walls
+rise as thin clean white volumes standing exactly on the drawn lines, then the
+interior partition walls follow, forming an open doll's house cutaway of the
+apartment seen from above — no ceiling, rooms open to the camera.
 
 The walls must stand exactly on the printed lines and must not drift, wobble,
-bend or change proportion. The plan underneath stays visible the whole time.
+bend or change proportion. The room layout stays identical to the drawing at
+every moment. The plan underneath stays visible the whole time.
 
 Architecture competition visualization, museum quality, minimal, elegant, calm,
-soft even daylight, no colour except paper white and graphite grey.
+soft even daylight from the upper left, long soft shadows, warm white and pale
+oak, no colour except paper white, warm grey and light wood.
 ```
 
 Negative, if the field exists:
@@ -73,10 +75,14 @@ Negative, if the field exists:
 ```
 camera movement, camera rotation, orbiting, zooming, handheld, perspective
 change, tilting, hand, pencil, pen, drawing tool, person, text, numbers,
-lettering, watermark, desk clutter, coffee cup, ruler, windows, glass,
-balconies, furniture, colour, warm sunset, dramatic lighting, morphing walls,
-melting geometry
+lettering, watermark, desk clutter, multi-storey building, apartment block,
+facade, exterior view, roof over the rooms, colour, warm sunset, dramatic
+lighting, morphing walls, melting geometry
 ```
+
+If the four seconds have to cover more, add furniture as the last beat —
+`then furniture and plants settle into the finished rooms` — but expect the
+walls to suffer for it. Geometry stability is what this test is for.
 
 ## What to look at in the result
 
