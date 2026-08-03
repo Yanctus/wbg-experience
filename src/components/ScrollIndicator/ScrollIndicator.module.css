@@ -1,0 +1,61 @@
+.hint {
+  position: absolute;
+  z-index: 10;
+  bottom: clamp(1.75rem, 4vh, 3rem);
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.85rem;
+  opacity: 0;
+}
+
+.label {
+  font-family: var(--font);
+  font-size: 0.66rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.line {
+  position: relative;
+  width: 1px;
+  height: 3.75rem;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    var(--hairline) 22%,
+    var(--hairline) 78%,
+    transparent
+  );
+}
+
+.dot {
+  position: absolute;
+  left: -1px;
+  top: 0;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--ink-faint);
+}
+
+/* On short viewports the hint moves up out of the sheet's way. */
+@media (max-height: 720px) {
+  .hint {
+    bottom: auto;
+    top: clamp(11rem, 33vh, 17rem);
+  }
+
+  .line {
+    height: 2rem;
+  }
+}

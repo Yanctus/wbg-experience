@@ -1,0 +1,429 @@
+/*
+ * The story's stage: layout, layer order and the static poses.
+ * All motion lives in the timeline hooks.
+ */
+
+.story {
+  /*
+   * Four consecutive stretches of scroll on one pinned stage and one timeline.
+   * The hook reads these to work out where each act begins, so they are the
+   * single source of truth for the whole choreography.
+   *
+   * These are scroll *distances*, not section heights: while the stage is
+   * pinned, one viewport height of the section is spent holding it in place,
+   * so the section is the sum plus --pin-offset.
+   */
+  --act-drawing: 300vh;
+  --act-enter: 170vh;
+  --act-construction: 380vh;
+  --act-reality: 300vh;
+  --pin-offset: 100vh;
+
+  /* Capped so the sheet cannot grow without limit on very wide displays. */
+  --paper-width: min(58vw, 64rem);
+  --paper-inset: 1vw;
+  --paper-rotate: -1.4deg;
+
+  /* Lifts near-white pixels to pure white so baked checkerboards vanish
+     under multiply, while real ink and shadow keep their density. */
+  --key: brightness(1.035);
+
+  position: relative;
+  width: 100%;
+  height: calc(
+    var(--act-drawing) + var(--act-enter) + var(--act-construction) + var(--act-reality) +
+      var(--pin-offset)
+  );
+}
+
+/*
+ * Height only — the pinning is ScrollTrigger's, with pinSpacing off because
+ * .story already reserves the distance. CSS sticky as well would fight the pin
+ * and make the layers drift.
+ */
+.viewport {
+  height: 100vh;
+  width: 100%;
+  overflow: hidden;
+}
+
+.stage {
+  position: relative;
+  height: 100%;
+  width: 100%;
+  /* Keeps every mix-blend-mode inside the story. */
+  isolation: isolate;
+  background-color: var(--paper-shade);
+}
+
+/* ---------------------------------------------------------------- layers */
+
+.room,
+.light,
+.grain,
+.dust {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.room img,
+.light img,
+.grain img,
+.dust img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.room {
+  z-index: 1;
+}
+
+.room img {
+  /* Held slightly back so the sheet reads as the brighter plane. */
+  filter: brightness(0.955) saturate(1.04);
+}
+
+/*
+ * Anchors carry the static pose; GSAP animates only the element inside them.
+ * Sharing one element would make GSAP absorb the centring offset and then
+ * animate it away.
+ */
+/*
+ * The blend has to sit on a direct child of the stage. Every wrapper below this
+ * one carries a transform or an animated opacity, and each of those is a
+ * stacking context — a blend further in can only reach its own empty backdrop,
+ * which is why the shadow's near-white plate was *lightening* the room by nine
+ * levels instead of darkening it. multiply is associative, so keeping it here
+ * as well as on the layer inside composes correctly.
+ */
+.shadowAnchor {
+  position: absolute;
+  z-index: 2;
+  mix-blend-mode: multiply;
+  top: 50%;
+  right: var(--paper-inset);
+  width: var(--paper-width);
+  aspect-ratio: 1536 / 1024;
+  translate: 0 -50%;
+  pointer-events: none;
+}
+
+/*
+ * The blend sits on the element the timeline fades, not on the image inside it.
+ * An ancestor with opacity < 1 is a stacking context, so a blend further in can
+ * only reach that ancestor's own empty backdrop — the shadow's near-white plate
+ * would then be composited as a pale rectangle over the room instead of
+ * disappearing into it.
+ */
+.shadow {
+  position: absolute;
+  inset: 0;
+  mix-blend-mode: multiply;
+}
+
+/*
+ * A stronger white-clip than the other layers get. The shadow plate is the
+ * lightest of the supplied PNGs, and at the shared --key its field survives
+ * multiply as a faint grey rectangle around the sheet — visible precisely
+ * because the room behind it is flat. Clipping harder removes the plate and
+ * leaves the shadow's dark core untouched.
+ */
+.shadow img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  /* A harder white-clip than the other layers: this plate is the lightest of
+     the supplied PNGs and needs more lift to vanish completely. */
+  filter: brightness(1.1);
+}
+
+/* 7, 8, 9 — atmosphere over everything else ----------------------------- */
+
+/*
+ * Each overlay gets its near-white field lifted to pure white first, which is
+ * what makes the baked checkerboard in these PNGs vanish under multiply
+ * instead of laying a grid over the whole picture. The light layer is blurred
+ * and slightly overscaled as well, so its edge never shows.
+ */
+.light img {
+  filter: brightness(1.05) blur(7px);
+  transform: scale(1.08);
+}
+
+.grain img {
+  filter: brightness(1.06);
+}
+
+.dust img {
+  filter: var(--key);
+}
+
+/*
+ * All three multiply. The overlays were authored on a near-white field, so
+ * multiply is what makes that field a no-op and leaves only the light, the
+ * grain and the motes themselves.
+ */
+.light {
+  z-index: 7;
+  opacity: 0.46;
+  mix-blend-mode: multiply;
+  will-change: transform;
+}
+
+.grain {
+  z-index: 8;
+  opacity: 0.24;
+  mix-blend-mode: multiply;
+}
+
+.dust {
+  z-index: 9;
+  opacity: 0.38;
+  mix-blend-mode: multiply;
+}
+
+/* ------------------------------------------------------------ typography */
+
+.content,
+.act2,
+.act3 {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0 var(--gutter);
+  pointer-events: none;
+}
+
+.content {
+  align-items: flex-start;
+  /* Half the stage at most, so the sheet on the right is never crowded. */
+  max-width: min(46%, 40rem);
+}
+
+/*
+ * The opening line sits in the headline's optical position and is absolutely
+ * placed, so handing over is a transformation in one spot, not a reflow.
+ * `padding: inherit` makes an absolutely positioned child resolve against the
+ * padding box, which is what keeps it on the headline's left edge.
+ */
+.intro {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  margin: 0;
+  padding: inherit;
+  transform: translateY(-50%);
+  font-family: var(--font);
+  font-size: var(--intro);
+  line-height: 1.62;
+  color: var(--ink-soft);
+  max-width: 24ch;
+}
+
+.introInner {
+  display: inline-block;
+  opacity: 0;
+}
+
+.introShared {
+  display: inline-block;
+  white-space: nowrap;
+  transform-origin: left center;
+  will-change: transform;
+}
+
+.eyebrow {
+  margin: 0 0 1.4rem;
+  font-family: var(--font);
+  font-size: var(--eyebrow);
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font);
+  font-size: var(--title);
+  font-weight: 500;
+  line-height: 1.16;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+}
+
+.titleLine {
+  display: block;
+}
+
+.subline {
+  margin: 1.6rem 0 0;
+  font-family: var(--font);
+  font-size: var(--body);
+  line-height: 1.6;
+  color: var(--ink-soft);
+  opacity: 0;
+}
+
+/* The second and third acts are centred: by then the board owns the frame. */
+.act2,
+.act3 {
+  align-items: center;
+  justify-content: flex-end;
+  padding-bottom: clamp(2.5rem, 8vh, 5rem);
+  text-align: center;
+  opacity: 0;
+}
+
+/*
+ * The closing words sit over the building itself, so they get the faintest
+ * lift of the surface behind them — enough to hold the type, not enough to
+ * read as a panel.
+ */
+.act3::before {
+  content: '';
+  position: absolute;
+  inset: auto 0 0;
+  height: 46%;
+  background: linear-gradient(
+    to top,
+    rgb(249 246 240 / 92%) 0%,
+    rgb(249 246 240 / 72%) 38%,
+    rgb(249 246 240 / 0%) 100%
+  );
+}
+
+.act3 > * {
+  position: relative;
+}
+
+.act2Title,
+.act3Title {
+  margin: 0;
+  max-width: 18ch;
+  font-family: var(--font);
+  font-size: var(--title);
+  font-weight: 500;
+  line-height: 1.18;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+}
+
+.act3Title {
+  max-width: 20ch;
+}
+
+.act3Body {
+  margin: 1.5rem 0 0;
+  max-width: 44ch;
+  font-family: var(--font);
+  font-size: var(--body);
+  line-height: 1.7;
+  color: var(--ink-soft);
+}
+
+/* ---------------------------------------------------------------- loader */
+
+.loader {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.1rem;
+  background-color: var(--paper-beige);
+  transition: opacity 600ms var(--ease-out);
+}
+
+.loader[data-ready='true'] {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.loaderLabel,
+.loaderValue {
+  margin: 0;
+  font-family: var(--font);
+  font-size: 0.68rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.loaderTrack {
+  width: min(18rem, 46vw);
+  height: 1px;
+  background-color: var(--hairline);
+}
+
+.loaderBar {
+  display: block;
+  height: 100%;
+  background-color: var(--ink-soft);
+  transform-origin: left center;
+  transition: transform 320ms var(--ease-out);
+}
+
+/* --------------------------------------------------------- responsive */
+
+@media (max-width: 1024px) {
+  .story {
+    --paper-width: min(74vw, 44rem);
+  }
+
+  .content {
+    max-width: min(62%, 34rem);
+  }
+}
+
+@media (max-width: 720px) {
+  .story {
+    /* Shorter pins and a calmer camera, but the same story beats. */
+    --act-drawing: 260vh;
+    --act-enter: 150vh;
+    --act-construction: 330vh;
+    --act-reality: 250vh;
+    --paper-width: min(96vw, 34rem);
+    --paper-inset: 2vw;
+  }
+
+  .content,
+  .act2,
+  .act3 {
+    justify-content: flex-start;
+    padding-top: clamp(5.5rem, 16vh, 9rem);
+    max-width: none;
+  }
+
+  .act2,
+  .act3 {
+    justify-content: flex-end;
+  }
+
+  .title,
+  .act2Title,
+  .act3Title {
+    font-size: clamp(1.75rem, 8.2vw, 2.5rem);
+  }
+}
+
+/*
+ * Reduced motion: no pin, no scrub, no camera. The story collapses to its key
+ * states, each one readable, in the order it would otherwise be animated.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .story {
+    --act-drawing: 100vh;
+    --act-enter: 0vh;
+    --act-construction: 0vh;
+    --act-reality: 0vh;
+    --pin-offset: 0vh;
+  }
+}

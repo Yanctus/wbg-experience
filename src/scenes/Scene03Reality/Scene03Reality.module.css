@@ -1,0 +1,102 @@
+/*
+ * Scene 03 — the world around the finished building.
+ *
+ * Three planes at different depths so the forward glide reads as entering a
+ * place rather than zooming an image: backdrop behind the building, the
+ * building itself, landscaping in front.
+ */
+.scene {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  pointer-events: none;
+}
+
+.backdrop,
+.foreground {
+  position: absolute;
+  inset: -8%;
+  opacity: 0;
+}
+
+.backdrop {
+  z-index: 1;
+}
+
+.foreground {
+  z-index: 3;
+}
+
+.backdrop img,
+.foreground img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Same anchor contract as the construction scene — the timeline writes both. */
+.building {
+  --plan-x: 50%;
+  --plan-y: 60%;
+  --size: min(70vw, 60rem);
+  --footprint-x: 54.59%;
+  --footprint-y: 54.42%;
+
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+}
+
+.layer {
+  position: absolute;
+  left: var(--plan-x);
+  top: var(--plan-y);
+  width: var(--size);
+  aspect-ratio: 1;
+  transform: translate(calc(var(--footprint-x) * -1), calc(var(--footprint-y) * -1));
+  opacity: 0;
+}
+
+.layer img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/*
+ * The material reveal. Rather than crossfading two pictures, the real building
+ * is uncovered behind a diagonal edge that travels across the facade, so glass
+ * and roof arrive as materials landing on a model that never moves.
+ */
+.material {
+  --wipe: 0;
+  --wipe-feather: 26%;
+
+  -webkit-mask-image: linear-gradient(
+    115deg,
+    #000 calc(var(--wipe) * 140% - var(--wipe-feather)),
+    transparent calc(var(--wipe) * 140% + var(--wipe-feather))
+  );
+  mask-image: linear-gradient(
+    115deg,
+    #000 calc(var(--wipe) * 140% - var(--wipe-feather)),
+    transparent calc(var(--wipe) * 140% + var(--wipe-feather))
+  );
+}
+
+/*
+ * Daylight developing over the scene. A single warm wash, not a colour grade —
+ * enough to turn gallery light into afternoon.
+ */
+.daylight {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  opacity: 0;
+  background: radial-gradient(
+    120% 90% at 22% 12%,
+    rgb(255 246 226 / 62%) 0%,
+    rgb(255 244 226 / 22%) 42%,
+    rgb(246 240 230 / 0%) 78%
+  );
+}
