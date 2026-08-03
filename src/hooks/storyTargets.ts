@@ -11,6 +11,8 @@ export type StoryTargets = {
   plan?: HTMLElement
   planLayers: HTMLElement[]
   walls?: HTMLElement
+  roof?: HTMLElement
+  roofShade?: HTMLElement
   planCentre?: HTMLElement
   planLeft?: HTMLElement
   planRight?: HTMLElement

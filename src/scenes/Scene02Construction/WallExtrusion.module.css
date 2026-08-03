@@ -3,6 +3,10 @@
  * translateZ points along the board's normal — straight up out of the paper.
  * Its ancestors have to keep the 3D context alive (transform-style) for that,
  * which is why .anchor, .camera and .lift are preserve-3d.
+ *
+ * Note that translateZ is *not* scaled by the ancestors' 2D scale: GSAP's
+ * `scale` writes scale3d(s, s, 1). The rise below is therefore in real screen
+ * pixels at the perspective the board sits at, not in the plan's own units.
  */
 .walls {
   position: absolute;
@@ -11,39 +15,70 @@
   transform-style: preserve-3d;
   pointer-events: none;
 
-  /* Height of one copy, in the plan's own pixels. GSAP animates it from 0. */
+  /* Height of one copy. GSAP animates it up from zero. */
   --rise: 0px;
+  /* How far above the walls the roof still hovers. Animated down to 0. */
+  --roof-drop: 70px;
+}
+
+.slab,
+.roof,
+.roofShade {
+  position: absolute;
+  inset: 0;
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
 }
 
 .slab {
-  position: absolute;
-  inset: 0;
   /*
    * Warm white, shaded from the base upward: the lowest copies sit in their own
    * shadow, the top catches the light. It is the only depth cue a stack of flat
    * copies has, and without it the wall reads as a smear.
    */
   background-color: rgb(
-    calc(168 + var(--i) * 3.2) calc(163 + var(--i) * 3.3) calc(153 + var(--i) * 3.5)
+    calc(170 + var(--i) * 1.85) calc(165 + var(--i) * 1.9) calc(155 + var(--i) * 2)
   );
   -webkit-mask-image: url('/assets/derived/wall-body.webp');
   mask-image: url('/assets/derived/wall-body.webp');
-  -webkit-mask-size: 100% 100%;
-  mask-size: 100% 100%;
+  /* Closes the seams between copies without softening the wall's own edges. */
+  filter: blur(0.4px);
   transform: translateZ(calc(var(--i) * var(--rise)));
 }
 
 .cap {
   background-color: #fdfcfa;
+  filter: none;
 }
 
 /*
  * The shadow the walls cast on the drawing. It sits on the board itself, at
- * zero height, so it grounds the stack instead of floating with it. The blur
- * flattens this one element, which is harmless: it has no height of its own.
+ * zero height, so it grounds the stack instead of floating with it.
  */
 .shade {
   background-color: rgb(74 66 54 / 34%);
   filter: blur(3px);
   transform: translate(1.5%, 1.6%);
+}
+
+/* The roof plate, and the shadow it drops on the walls as it comes down. */
+/*
+ * A shade darker than the wall heads it lands on, so the roof reads as a
+ * surface of its own rather than as the walls filling in.
+ */
+.roof {
+  background-color: #e9e5dd;
+  -webkit-mask-image: url('/assets/derived/roof.webp');
+  mask-image: url('/assets/derived/roof.webp');
+  opacity: 0;
+  transform: translateZ(calc(var(--i, 47) * var(--rise) + var(--roof-drop)));
+}
+
+.roofShade {
+  background-color: rgb(74 66 54 / 30%);
+  -webkit-mask-image: url('/assets/derived/roof.webp');
+  mask-image: url('/assets/derived/roof.webp');
+  opacity: 0;
+  filter: blur(6px);
+  transform: translate(1.2%, 1.4%) translateZ(calc(var(--i, 46) * var(--rise)));
 }

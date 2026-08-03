@@ -75,6 +75,8 @@ export function useStoryTimeline(
         plan: pick('[data-story-plan]'),
         planLayers: q('[data-story-plan-layer]') as HTMLElement[],
         walls: pick('[data-story-walls]'),
+        roof: pick('[data-story-roof]'),
+        roofShade: pick('[data-story-roof-shade]'),
         planCentre: pick('[data-story-plan-centre]'),
         planLeft: pick('[data-story-plan-left]'),
         planRight: pick('[data-story-plan-right]'),

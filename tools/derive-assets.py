@@ -122,7 +122,15 @@ def derive_plan() -> None:
     # intersected back with its own dilation, and the small-part filter then
     # eats it. The construction stages the *height*, not the file.
     print('wall body:')
-    save(body(wall).astype(float), 'wall-body', tint=(255, 255, 255))
+    solid = body(wall)
+    save(solid.astype(float), 'wall-body', tint=(255, 255, 255))
+
+    # The roof: the building's own outline as a plate. `inside` already is that
+    # outline — it is what separated the building from the annotation around it
+    # — and an opening followed by a closing takes the dimension lines that
+    # brush against it off the edge without rounding the corners.
+    plate = ndi.binary_closing(ndi.binary_opening(inside, np.ones((41, 41))), np.ones((41, 41)))
+    save(largest(plate).astype(float), 'roof', tint=(255, 255, 255))
 
     print('plan layers:')
     save(wall_ink * exterior, 'plan-1-footprint')

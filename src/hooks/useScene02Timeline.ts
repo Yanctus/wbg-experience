@@ -12,8 +12,8 @@ import type { ActOptions, StoryTargets } from './storyTargets'
  */
 
 /** Presentation angle of the board, in degrees. */
-const TILT = 58
-const TILT_COMPACT = 52
+const TILT = 62
+const TILT_COMPACT = 56
 const SETTLE_Y = 13
 /*
  * On a phone the board settles much lower in the frame. The building grows
@@ -28,8 +28,8 @@ const SETTLE_Y_COMPACT = 8
  * space. Every ancestor scale multiplies it, so this is a small number: the
  * board is roughly five times its layout size by the time the walls grow.
  */
-const WALL_RISE = 0.86
-const WALL_RISE_COMPACT = 0.62
+const WALL_RISE = 3.4
+const WALL_RISE_COMPACT = 2.2
 
 
 /**
@@ -167,7 +167,7 @@ export function buildConstructionAct({
   targets,
   compact,
 }: ActOptions) {
-  const { tilt, stage, sheet, board, plan, planLayers, walls, act2 } = targets
+  const { tilt, stage, sheet, board, plan, planLayers, walls, roof, roofShade, act2 } = targets
 
   const at = (fraction: number) => position + fraction * duration
   const span = (fraction: number) => fraction * duration
@@ -244,15 +244,34 @@ export function buildConstructionAct({
    * paper are readable, then settling into the finished height.
    */
   if (walls) {
-    timeline.to(walls, { opacity: 1, duration: span(0.06), ease: 'power1.out' }, at(0.38))
+    timeline.to(walls, { opacity: 1, duration: span(0.06), ease: 'power1.out' }, at(0.34))
     timeline.to(
       walls,
       {
         '--rise': () => `${compact ? WALL_RISE_COMPACT : WALL_RISE}px`,
-        duration: span(0.42),
+        duration: span(0.38),
         ease: 'power2.inOut',
       },
-      at(0.38),
+      at(0.34),
+    )
+  }
+
+  /*
+   * The roof comes last and comes down, rather than fading in on top: it
+   * appears hovering above the finished walls and settles onto them, which is
+   * what makes the apartment read as built rather than drawn.
+   */
+  if (roof) {
+    timeline.to(roof, { opacity: 1, duration: span(0.05), ease: 'power1.out' }, at(0.74))
+  }
+  if (roofShade) {
+    timeline.to(roofShade, { opacity: 1, duration: span(0.05), ease: 'power1.out' }, at(0.74))
+  }
+  if (walls) {
+    timeline.to(
+      walls,
+      { '--roof-drop': '0px', duration: span(0.12), ease: 'power2.inOut' },
+      at(0.76),
     )
   }
 

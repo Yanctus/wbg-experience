@@ -29,8 +29,15 @@
    * sheet settling onto a table rather than a card being flipped, short enough
    * that the far edge still recedes convincingly.
    */
-  perspective: 1500px;
-  perspective-origin: 55% 45%;
+  /*
+   * A long lens, not a wide one. The walls stand up in real Z, and at a short
+   * perspective distance everything raised off the board also races toward the
+   * camera — the roof plate ends up visibly larger than the building it sits
+   * on. Pulling the viewpoint back keeps the raised parts the size they should
+   * be; the tilt angle below compensates for the flatter projection.
+   */
+  perspective: 3400px;
+  perspective-origin: 52% 44%;
   pointer-events: none;
 }
 
