@@ -11,7 +11,7 @@
 
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import { resolveVideo, ASSETS } from './assets'
+import { resolveImage, resolveVideo, ASSETS } from './assets'
 
 const CHAPTERS = 4
 const SCROLL_LENGTH = 4200 // px of scroll the pinned film consumes
@@ -22,6 +22,20 @@ export async function initFilm(reducedMotion: boolean): Promise<void> {
 
   const video = section.querySelector<HTMLVideoElement>('.film__video')!
   const frame = section.querySelector<HTMLElement>('.film__frame')!
+
+  // Swap the blurred placeholder for the film's real first frame as soon as
+  // one loads — sharp, because it is exactly what the video will show.
+  if (ASSETS.walkthroughPoster.remote) {
+    resolveImage('walkthroughPoster').then((url) => {
+      const probe = new Image()
+      probe.onload = () => {
+        const poster = section.querySelector<HTMLImageElement>('.film__poster')!
+        poster.src = url
+        poster.classList.add('film__poster--sharp')
+      }
+      probe.src = url
+    })
+  }
   const sky = section.querySelector<HTMLElement>('.film__layer--sky')!
   const foliage = section.querySelector<HTMLElement>('.film__layer--fg')!
   const railFill = section.querySelector<HTMLElement>('.film__railfill')!
@@ -139,9 +153,12 @@ export async function initFilm(reducedMotion: boolean): Promise<void> {
 }
 
 async function videoSource(): Promise<string | null> {
-  const entry = ASSETS.walkthrough
+  // Small screens get the 720p master; it scrubs just as smoothly at less
+  // than two thirds of the transfer size.
+  const key = matchMedia('(max-width: 900px)').matches ? 'walkthrough720' : 'walkthrough'
+  const entry = ASSETS[key]
   if (!entry.remote && !(await localExists(entry.local))) return null
-  return resolveVideo('walkthrough')
+  return resolveVideo(key)
 }
 
 async function localExists(path: string): Promise<boolean> {

@@ -527,6 +527,11 @@ a {
 .film__poster {
   filter: blur(22px) saturate(1.1) brightness(0.9);
   transform: scale(1.1);
+  transition: filter 0.8s var(--ease-out), transform 0.8s var(--ease-out);
+}
+.film__poster--sharp {
+  filter: none;
+  transform: none;
 }
 .film__video {
   opacity: 0;

@@ -5,10 +5,14 @@
   },
   "walkthrough": {
     "local": "/assets/walkthrough.mp4",
-    "remote": ""
+    "remote": "https://d2ol7oe51mr4n9.cloudfront.net/user_3HGPNyGGgDn4I0t2sAPhdMAtSEM/291f172a-f34d-4f8b-85ec-18905a329b61.mp4"
+  },
+  "walkthrough720": {
+    "local": "/assets/walkthrough-720.mp4",
+    "remote": "https://d2ol7oe51mr4n9.cloudfront.net/user_3HGPNyGGgDn4I0t2sAPhdMAtSEM/2fb7fb08-6029-4580-b359-edfdd97caa17.mp4"
   },
   "walkthroughPoster": {
     "local": "/assets/walkthrough-poster.jpg",
-    "remote": ""
+    "remote": "https://d2ol7oe51mr4n9.cloudfront.net/user_3HGPNyGGgDn4I0t2sAPhdMAtSEM/0dbc3759-1484-45c6-bdf4-a72410a5a558.jpg"
   }
 }
