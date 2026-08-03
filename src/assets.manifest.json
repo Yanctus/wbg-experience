@@ -1,0 +1,14 @@
+{
+  "hero": {
+    "local": "/assets/hero.png",
+    "remote": "https://d8j0ntlcm91z4.cloudfront.net/user_3HGPNyGGgDn4I0t2sAPhdMAtSEM/hf_20260803_095006_f0e5de3b-77bf-4a3f-b91c-6c95e35b9306.png"
+  },
+  "walkthrough": {
+    "local": "/assets/walkthrough.mp4",
+    "remote": ""
+  },
+  "walkthroughPoster": {
+    "local": "/assets/walkthrough-poster.jpg",
+    "remote": ""
+  }
+}
