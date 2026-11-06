@@ -1,0 +1,52 @@
+.scene {
+  position: relative;
+}
+
+.stage {
+  position: relative;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  will-change: transform;
+  user-select: none;
+}
+
+.hud {
+  position: absolute;
+  inset: auto 0 0 0;
+  padding: clamp(1.5rem, 5vw, 4rem);
+  display: grid;
+  gap: 0.5rem;
+  background: linear-gradient(to top, rgb(16 16 15 / 92%) 30%, rgb(16 16 15 / 0%));
+}
+
+.title {
+  margin: 0;
+  font-size: clamp(2rem, 6vw, 4rem);
+  font-weight: 300;
+  letter-spacing: 0.02em;
+}
+
+.subtitle {
+  margin: 0;
+  color: var(--color-muted);
+}
+
+.warning {
+  margin: 0.5rem 0 0;
+  max-width: 60ch;
+  font-size: 0.875rem;
+  color: #ffcf8f;
+}
+
+.warning code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.9em;
+}
