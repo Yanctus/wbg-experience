@@ -1,0 +1,75 @@
+.bar {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.85rem var(--gutter);
+  transition:
+    background-color 0.35s,
+    box-shadow 0.35s,
+    -webkit-backdrop-filter 0.35s,
+    backdrop-filter 0.35s;
+}
+
+/* Wird per ScrollTrigger gesetzt, sobald die Seite gescrollt ist. */
+.bar[data-scrolled] {
+  background: color-mix(in srgb, var(--paper-hi) 78%, transparent);
+  -webkit-backdrop-filter: blur(14px) saturate(1.2);
+  backdrop-filter: blur(14px) saturate(1.2);
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--hairline) 85%, transparent);
+}
+
+.brand {
+  display: flex;
+  align-items: baseline;
+  gap: 0.55rem;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.mark {
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+}
+
+.brandText {
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: clamp(0.75rem, 2vw, 1.75rem);
+}
+
+.home {
+  padding: 0.4rem 0;
+  border-bottom: 1px solid transparent;
+  color: var(--ink-soft);
+  font-size: 0.72rem;
+  letter-spacing: 0.13em;
+  text-decoration: none;
+  text-transform: uppercase;
+  transition:
+    color 0.2s,
+    border-color 0.2s;
+}
+
+.home:hover {
+  color: var(--ink);
+  border-color: var(--ink);
+}
+
+@media (max-width: 680px) {
+  .brandText,
+  .home {
+    display: none;
+  }
+}

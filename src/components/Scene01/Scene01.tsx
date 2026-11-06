@@ -36,6 +36,9 @@ export default function Scene01() {
             Grundgerüst — React&nbsp;+&nbsp;TypeScript&nbsp;+&nbsp;Vite&nbsp;+&nbsp;GSAP
             ScrollTrigger&nbsp;+&nbsp;CSS&nbsp;Modules
           </p>
+          <a className={styles.link} href="#/profil">
+            Profilseite ansehen →
+          </a>
           {pending.length > 0 && (
             <p className={styles.warning}>
               {pending.length} von {SCENE_01_LAYERS.length} Ebenen sind deaktiviert: Die

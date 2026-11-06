@@ -1,0 +1,48 @@
+.heading {
+  display: flex;
+  align-items: center;
+  gap: clamp(0.75rem, 2vw, 1.25rem);
+  margin: 0 0 clamp(1.25rem, 3vw, 2rem);
+  font-weight: 400;
+}
+
+.index {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.14em;
+  color: var(--signal-ink);
+}
+
+.text {
+  font-size: clamp(1.5rem, 2.6vw, 2.2rem);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+
+/* Maßlinie, die die Zeile füllt — mit Endmarken wie in einer Bemaßung. */
+.rule {
+  position: relative;
+  flex: 1;
+  min-width: 2rem;
+  height: 1px;
+  background: color-mix(in srgb, var(--ink-faint) 60%, transparent);
+}
+
+.rule::before,
+.rule::after {
+  content: '';
+  position: absolute;
+  top: -4px;
+  width: 1px;
+  height: 9px;
+  background: color-mix(in srgb, var(--ink-faint) 80%, transparent);
+}
+
+.rule::before {
+  left: 0;
+}
+
+.rule::after {
+  right: 0;
+}

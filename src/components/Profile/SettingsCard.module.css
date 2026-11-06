@@ -1,0 +1,165 @@
+.section {
+  min-width: 0;
+}
+
+.group {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.group + .group {
+  margin-top: 1.9rem;
+  padding-top: 1.6rem;
+  border-top: 1px solid var(--hairline);
+}
+
+.legend {
+  padding: 0;
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.hint {
+  margin: 0.4rem 0 0;
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+}
+
+/* ----- Sprachkarten ----- */
+.languages {
+  display: grid;
+  /* Fünf Sprachen: bei normaler Breite eine Reihe, schmal 2 + 2 + 1. */
+  grid-template-columns: repeat(auto-fit, minmax(6.4rem, 1fr));
+  gap: 0.6rem;
+  margin-top: 1rem;
+}
+
+.language {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.45rem;
+  padding: 0.85rem 0.95rem;
+  border: 1px solid var(--hairline);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--paper-hi) 55%, transparent);
+  cursor: pointer;
+  transition:
+    border-color 0.2s,
+    background-color 0.2s,
+    transform 0.25s var(--ease-out);
+}
+
+.language:hover {
+  border-color: var(--ink-faint);
+  transform: translateY(-2px);
+}
+
+.language:has(:checked) {
+  border-color: var(--signal-ink);
+  background: color-mix(in srgb, var(--signal) 13%, var(--paper-hi));
+  color: var(--signal-ink);
+}
+
+.language:has(:focus-visible) {
+  outline: 2px solid var(--signal-ink);
+  outline-offset: 3px;
+}
+
+/* Das Radio bleibt echt und fokussierbar, ist aber unsichtbar über die Karte gelegt. */
+.radio {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.languageName {
+  font-size: 1.02rem;
+}
+
+.languageShort {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  color: var(--ink-faint);
+}
+
+.language:has(:checked) .languageShort {
+  color: var(--signal-ink);
+}
+
+/* ----- Schalter ----- */
+.switches {
+  display: grid;
+  margin-top: 0.4rem;
+}
+
+.switchRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.25rem;
+  padding: 0.85rem 0;
+  border-bottom: 1px solid var(--hairline);
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+
+.switchRow:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.switch {
+  appearance: none;
+  position: relative;
+  flex: none;
+  width: 2.7rem;
+  height: 1.5rem;
+  margin: 0;
+  border: 1px solid var(--ink-faint);
+  border-radius: 999px;
+  background: transparent;
+  cursor: pointer;
+  transition:
+    background-color 0.25s var(--ease-out),
+    border-color 0.25s var(--ease-out);
+}
+
+.switch::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 3px;
+  width: 1.05rem;
+  height: 1.05rem;
+  border-radius: 50%;
+  background: var(--ink-faint);
+  transform: translateY(-50%);
+  transition:
+    transform 0.3s var(--ease-out),
+    background-color 0.25s var(--ease-out);
+}
+
+.switch:checked {
+  border-color: var(--signal-ink);
+  background: var(--signal-ink);
+}
+
+.switch:checked::before {
+  background: #fff;
+  transform: translate(1.2rem, -50%);
+}
+
+.switch:focus-visible {
+  outline: 2px solid var(--signal-ink);
+  outline-offset: 3px;
+}

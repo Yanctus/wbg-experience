@@ -1,0 +1,45 @@
+.sheet {
+  position: relative;
+  padding: clamp(1.25rem, 2.4vw, 2rem);
+  border: 1px solid color-mix(in srgb, var(--hairline) 75%, transparent);
+  border-radius: 6px;
+  /* Oben: Lichtfleck, folgt dem Mauszeiger (--sx/--sy). Darunter: das Papier. */
+  background:
+    radial-gradient(
+      460px circle at var(--sx, 18%) var(--sy, 0%),
+      rgb(255 255 255 / 0.6),
+      transparent 62%
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--paper-hi) 90%, transparent),
+      color-mix(in srgb, var(--paper-hi) 74%, transparent)
+    );
+  -webkit-backdrop-filter: blur(16px) saturate(1.15);
+  backdrop-filter: blur(16px) saturate(1.15);
+  box-shadow:
+    0 1px 0 rgb(255 255 255 / 0.9) inset,
+    0 34px 54px -36px rgb(38 34 28 / 0.5),
+    0 2px 8px rgb(38 34 28 / 0.06);
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+/* Schnittmarken an den vier Ecken, knapp außerhalb der Karte. */
+.sheet::before {
+  --m: color-mix(in srgb, var(--ink-faint) 70%, transparent);
+
+  content: '';
+  position: absolute;
+  inset: -8px;
+  pointer-events: none;
+  background:
+    linear-gradient(var(--m), var(--m)) 0 0 / 12px 1px no-repeat,
+    linear-gradient(var(--m), var(--m)) 0 0 / 1px 12px no-repeat,
+    linear-gradient(var(--m), var(--m)) 100% 0 / 12px 1px no-repeat,
+    linear-gradient(var(--m), var(--m)) 100% 0 / 1px 12px no-repeat,
+    linear-gradient(var(--m), var(--m)) 0 100% / 12px 1px no-repeat,
+    linear-gradient(var(--m), var(--m)) 0 100% / 1px 12px no-repeat,
+    linear-gradient(var(--m), var(--m)) 100% 100% / 12px 1px no-repeat,
+    linear-gradient(var(--m), var(--m)) 100% 100% / 1px 12px no-repeat;
+}

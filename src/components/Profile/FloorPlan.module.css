@@ -1,0 +1,123 @@
+.svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+/* ----- Räume (interaktiv) ----- */
+.room {
+  fill: transparent;
+  cursor: pointer;
+  transition: fill 0.28s var(--ease-out);
+}
+
+.room[data-on] {
+  fill: color-mix(in srgb, var(--signal) 16%, transparent);
+}
+
+/* ----- Wände ----- */
+.outer {
+  stroke: var(--ink);
+  stroke-width: 7;
+  stroke-linecap: butt;
+}
+
+.inner {
+  stroke: var(--ink);
+  stroke-width: 4;
+  stroke-linecap: butt;
+}
+
+.corner {
+  fill: var(--ink);
+}
+
+/* ----- Fenster, Türen, Möbel ----- */
+.window {
+  stroke: var(--signal-ink);
+  stroke-width: 1;
+}
+
+.doorLeaf {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1.6;
+}
+
+/* Gestrichelt; während des Zeichnens überschreibt GSAP das, danach gilt wieder dies. */
+.doorArc {
+  fill: none;
+  stroke: var(--ink-faint);
+  stroke-width: 1;
+  stroke-dasharray: 2 2.5;
+}
+
+.furniture rect,
+.furniture circle {
+  fill: none;
+  stroke: var(--ink-faint);
+  stroke-width: 1;
+}
+
+/* ----- Bemaßung ----- */
+.dims line,
+.dims path,
+.dims circle,
+.dims rect {
+  fill: none;
+  stroke: var(--ink-faint);
+  stroke-width: 0.8;
+}
+
+.dims .north {
+  fill: var(--ink);
+  stroke: none;
+}
+
+.dims .scaleFill {
+  fill: var(--ink-faint);
+  stroke: none;
+}
+
+.dimText {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  fill: var(--ink-faint);
+}
+
+/* ----- Nummernmarken ----- */
+.markerCircle {
+  fill: var(--paper-hi);
+  stroke: var(--ink-faint);
+  stroke-width: 1;
+  transition:
+    fill 0.25s var(--ease-out),
+    stroke 0.25s var(--ease-out);
+}
+
+.markerText {
+  font-family: var(--mono);
+  font-size: 10px;
+  fill: var(--ink);
+  text-anchor: middle;
+  dominant-baseline: central;
+  transition: fill 0.25s var(--ease-out);
+}
+
+.marker[data-on] .markerCircle {
+  fill: var(--signal-ink);
+  stroke: var(--signal-ink);
+}
+
+.marker[data-on] .markerText {
+  fill: #fff;
+}
+
+/* Zu klein, um lesbar zu sein: Zahlen weglassen, die Zeichnung bleibt. */
+@media (max-width: 560px) {
+  .dimText {
+    display: none;
+  }
+}
